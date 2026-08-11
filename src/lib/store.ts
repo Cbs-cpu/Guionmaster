@@ -8,6 +8,7 @@ import { makeId } from "./utils";
 
 interface StudioState {
   scripts: ScriptRecord[];
+  knowledgeNotes: Record<string, string>;
   hydrated: boolean;
 
   addScript: (script: ScriptRecord) => void;
@@ -18,6 +19,8 @@ interface StudioState {
   setStatus: (id: string, status: ScriptStatus) => void;
   getScript: (id: string) => ScriptRecord | undefined;
 
+  setKnowledgeNote: (categoryId: string, text: string) => void;
+
   setHydrated: () => void;
 }
 
@@ -25,6 +28,7 @@ export const useStudioStore = create<StudioState>()(
   persist(
     (set, get) => ({
       scripts: [],
+      knowledgeNotes: {},
       hydrated: false,
 
       addScript: (script) => set((s) => ({ scripts: [script, ...s.scripts] })),
@@ -68,6 +72,9 @@ export const useStudioStore = create<StudioState>()(
         })),
 
       getScript: (id) => get().scripts.find((sc) => sc.id === id),
+
+      setKnowledgeNote: (categoryId, text) =>
+        set((s) => ({ knowledgeNotes: { ...s.knowledgeNotes, [categoryId]: text } })),
 
       setHydrated: () => set({ hydrated: true }),
     }),
