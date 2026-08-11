@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "skills": {
+    "alterlab-pra-copywriter": {
+      "source": "alterlab-ieu/alterlab-fc-skills",
+      "sourceType": "github",
+      "skillPath": "skills/pra/alterlab-pra-copywriter/SKILL.md",
+      "computedHash": "d428ac3eb943a78d1f49c693a34df927384792195c4ee2f43dda4725c87f270c"
+    },
+    "animate": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/animate/SKILL.md",
+      "computedHash": "5c7094be3a84f8083dc081d15467d0199836a7ca43891bc83f6ce22bcf23de08"
+    },
+    "animation-vocabulary": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/animation-vocabulary/SKILL.md",
+      "computedHash": "39319fc9a33c15be08666b3685f58666f042ff36bb902b7814c0834a5ba99df4"
+    },
+    "anthropic-frontend-design": {
+      "source": "chaibuilder/sdk",
+      "sourceType": "github",
+      "skillPath": ".windsurf/skills/anthropic-frontend-design/SKILL.md",
+      "computedHash": "edc0d85f7786f9bf81d41e57ec1d1e0690a110cb13b8fac8434e412134ae3409"
+    },
+    "apple-design": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/apple-design/SKILL.md",
+      "computedHash": "8b94db67cb9edaad5f1501010804caa610131f1d2dfda0a27664b2e858deade3"
+    },
+    "ask-sonner": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/ask-sonner/SKILL.md",
+      "computedHash": "23f724e97247b2003ccc479f3a9b3af8e4191a0e133b94ee6b73f8405349687f"
+    },
+    "content-marketing": {
+      "source": "kostja94/marketing-skills",
+      "sourceType": "github",
+      "skillPath": "skills/strategies/brand/content-marketing/SKILL.md",
+      "computedHash": "5d532ac56d8a11cfc093d7ce246e8e16bfae887ce510f030236c96500c88442a"
+    },
+    "content-strategy": {
+      "source": "kostja94/marketing-skills",
+      "sourceType": "github",
+      "skillPath": "skills/seo/content/content-strategy/SKILL.md",
+      "computedHash": "a3d3e88911188446f8fae294bedd503456476b6b32af794448204c2fa15a5ec6"
+    },
+    "emil-design-eng": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/emil-design-eng/SKILL.md",
+      "computedHash": "41b0a4dc1a27164fe297845a6c6850a39e9242c42c9be999967fcee9df2c5974"
+    },
+    "find-animation-opportunities": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-animation-opportunities/SKILL.md",
+      "computedHash": "8fb8492eb8fbed1313cb430b5831d925d9b8964ca24f3c41a6244cbd1fd98732"
+    },
+    "improve-animations": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/improve-animations/SKILL.md",
+      "computedHash": "eeb219a407e325b687af88db25771cc3018e3148245604112f5ac6990b6fd79c"
+    },
+    "pick-ui-library": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/pick-ui-library/SKILL.md",
+      "computedHash": "f8d4d2cf4677bf54b14f35f62a741add93541bfcb67863315a40164365161b49"
+    },
+    "prototype": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/prototype/SKILL.md",
+      "computedHash": "f246d1f47566481d9207e1aa574bdee5454257d862919a6591283e9af2f57eab"
+    },
+    "review-animations": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/review-animations/SKILL.md",
+      "computedHash": "b9f669af5ae280c19a592a94611520335a81de25c88f225bf60ae4b2d66c8c7c"
+    },
+    "script-writer": {
+      "source": "ailabs-393/ai-labs-claude-skills",
+      "sourceType": "github",
+      "skillPath": "packages/skills/script-writer/SKILL.md",
+      "computedHash": "97f0cdcd52c188a879aabe0a4d2f00e3666cec270c499ad42f744ebe6f73ba3f"
+    },
+    "scriptwriting-methodology": {
+      "source": "mike-coulbourn/claude-vibes",
+      "sourceType": "github",
+      "skillPath": "plugins/vibes/skills/scriptwriting-methodology/SKILL.md",
+      "computedHash": "04bfc8054a1a9655d98e3e12a3aa65491718de7bbecce1f09c10bc8b905ae017"
+    },
+    "short-form-video": {
+      "source": "iart-ai/tiktok-video-skills",
+      "sourceType": "github",
+      "skillPath": "skills/short-form-video/SKILL.md",
+      "computedHash": "893ea19615f3199159b9fe94f05e37a5e538e7e0c3af7f77f9f9bed7ff933423"
+    },
+    "video-script": {
+      "source": "indranilbanerjee/digital-marketing-pro",
+      "sourceType": "github",
+      "skillPath": "skills/video-script/SKILL.md",
+      "computedHash": "2a2848491b60c1e5ae79d666c28acece6b0b586b8707cb50793db0cbdf7acb69"
+    }
+  }
+}

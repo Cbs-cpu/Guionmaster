@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+:root {
+  --color-paper: #f3efe3;
+  --color-paper-raised: #faf7ee;
+  --color-paper-sunken: #eae4d3;
+  --color-ink: #221c12;
+  --color-ink-soft: #6b6252;
+  --color-ink-faint: #9a9180;
+  --color-rule: #ddd4bd;
+  --color-rule-strong: #c7bb9c;
+
+  --color-accent: #b3421a;
+  --color-accent-ink: #f6ece3;
+  --color-accent-soft: #f0ddc9;
+
+  --color-blueprint: #2c5468;
+  --color-blueprint-ink: #eaf1f3;
+  --color-blueprint-soft: #dee8ea;
+
+  --color-state-idea: #857b68;
+  --color-state-borrador: #2c5468;
+  --color-state-listo: #a17a17;
+  --color-state-grabado: #6a4f8f;
+  --color-state-publicado: #3c6e46;
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --font-display: var(--font-fraunces);
+  --font-body: var(--font-public-sans);
+  --font-label: var(--font-plex-mono);
+}
+
+@theme inline {
+  --color-paper: var(--color-paper);
+  --color-paper-raised: var(--color-paper-raised);
+  --color-paper-sunken: var(--color-paper-sunken);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-ink-faint: var(--color-ink-faint);
+  --color-rule: var(--color-rule);
+  --color-rule-strong: var(--color-rule-strong);
+  --color-accent: var(--color-accent);
+  --color-accent-ink: var(--color-accent-ink);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-blueprint: var(--color-blueprint);
+  --color-blueprint-ink: var(--color-blueprint-ink);
+  --color-blueprint-soft: var(--color-blueprint-soft);
+  --color-state-idea: var(--color-state-idea);
+  --color-state-borrador: var(--color-state-borrador);
+  --color-state-listo: var(--color-state-listo);
+  --color-state-grabado: var(--color-state-grabado);
+  --color-state-publicado: var(--color-state-publicado);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-label: var(--font-label);
+}
+
+* {
+  border-color: var(--color-rule);
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  background-image:
+    linear-gradient(var(--color-rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-attachment: fixed;
+  background-position: -1px -1px;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+/* Scrollbars: thin, ink-on-paper, consistent across the app */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rule-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-rule-strong);
+  border-radius: 4px;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.label-caps {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.code-inline {
+  font-family: var(--font-label);
+  background: var(--color-paper-sunken);
+  border: 1px solid var(--color-rule);
+  border-radius: 3px;
+  padding: 0.05em 0.35em;
+}
+
+.paper-panel {
+  background: var(--color-paper-raised);
+  border: 1px solid var(--color-rule);
+}
+
+.press:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hover-lift {
+    transition: transform 160ms var(--ease-out-strong), box-shadow 160ms var(--ease-out-strong);
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 420ms var(--ease-out-strong) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
