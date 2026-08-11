@@ -10,6 +10,7 @@ interface StudioState {
   scripts: ScriptRecord[];
   knowledgeNotes: Record<string, string>;
   customKnowledge: KnowledgeCategory[];
+  seededScriptIds: string[];
   hydrated: boolean;
 
   addScript: (script: ScriptRecord) => void;
@@ -34,6 +35,7 @@ export const useStudioStore = create<StudioState>()(
       scripts: [],
       knowledgeNotes: {},
       customKnowledge: [],
+      seededScriptIds: [],
       hydrated: false,
 
       addScript: (script) => set((s) => ({ scripts: [script, ...s.scripts] })),
@@ -100,10 +102,34 @@ export const useStudioStore = create<StudioState>()(
     {
       name: "system-content-studio",
       onRehydrateStorage: () => (state) => {
-        // Primera vez que se abre la app en este navegador (sin datos guardados
-        // todavía): precargamos la biblioteca con los guiones de ejemplo.
-        if (state && state.scripts.length === 0) {
-          state.scripts = SEED_SCRIPTS;
+        // Precarga aditiva: cada guion de ejemplo tiene un id estable. Se
+        // añade una sola vez por navegador (se recuerda en seededScriptIds),
+        // tanto la primera vez que se abre la app como cuando se añaden
+        // guiones de ejemplo nuevos en una actualización — sin duplicar los
+        // que ya había ni resucitar los que el usuario haya borrado.
+        //
+        // Migración: los primeros 11 guiones de ejemplo se lanzaron antes de
+        // que tuvieran un id estable, así que quien ya los tenía guardados
+        // los tiene con un id aleatorio de entonces. Para no duplicarlos, si
+        // el título ya existe en la biblioteca se da por "ya sembrado" ese
+        // id nuevo sin volver a insertarlo.
+        if (state) {
+          const seen = new Set(state.seededScriptIds);
+          const existingTitles = new Set(state.scripts.map((s) => s.title));
+          const toAdd: ScriptRecord[] = [];
+          const newlySeeded: string[] = [];
+
+          for (const seed of SEED_SCRIPTS) {
+            if (seen.has(seed.id)) continue;
+            newlySeeded.push(seed.id);
+            if (existingTitles.has(seed.title)) continue; // ya lo tenía, de antes de que hubiera id estable
+            toAdd.push(seed);
+          }
+
+          if (newlySeeded.length > 0) {
+            state.scripts = [...toAdd, ...state.scripts];
+            state.seededScriptIds = [...state.seededScriptIds, ...newlySeeded];
+          }
         }
         state?.setHydrated();
       },
