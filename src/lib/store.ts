@@ -2,12 +2,12 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { SEED_SCRIPTS } from "./seed-scripts";
+import type { ScriptRecord, ScriptStatus } from "./types";
 import { makeId } from "./utils";
-import type { CanvasBoard, ScriptRecord, ScriptStatus } from "./types";
 
 interface StudioState {
   scripts: ScriptRecord[];
-  canvases: CanvasBoard[];
   hydrated: boolean;
 
   addScript: (script: ScriptRecord) => void;
@@ -18,11 +18,6 @@ interface StudioState {
   setStatus: (id: string, status: ScriptStatus) => void;
   getScript: (id: string) => ScriptRecord | undefined;
 
-  addCanvas: (canvas: CanvasBoard) => void;
-  updateCanvas: (id: string, patch: Partial<CanvasBoard>) => void;
-  deleteCanvas: (id: string) => void;
-  getCanvas: (id: string) => CanvasBoard | undefined;
-
   setHydrated: () => void;
 }
 
@@ -30,7 +25,6 @@ export const useStudioStore = create<StudioState>()(
   persist(
     (set, get) => ({
       scripts: [],
-      canvases: [],
       hydrated: false,
 
       addScript: (script) => set((s) => ({ scripts: [script, ...s.scripts] })),
@@ -75,24 +69,16 @@ export const useStudioStore = create<StudioState>()(
 
       getScript: (id) => get().scripts.find((sc) => sc.id === id),
 
-      addCanvas: (canvas) => set((s) => ({ canvases: [canvas, ...s.canvases] })),
-
-      updateCanvas: (id, patch) =>
-        set((s) => ({
-          canvases: s.canvases.map((c) =>
-            c.id === id ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c
-          ),
-        })),
-
-      deleteCanvas: (id) => set((s) => ({ canvases: s.canvases.filter((c) => c.id !== id) })),
-
-      getCanvas: (id) => get().canvases.find((c) => c.id === id),
-
       setHydrated: () => set({ hydrated: true }),
     }),
     {
       name: "system-content-studio",
       onRehydrateStorage: () => (state) => {
+        // Primera vez que se abre la app en este navegador (sin datos guardados
+        // todavía): precargamos la biblioteca con los guiones de ejemplo.
+        if (state && state.scripts.length === 0) {
+          state.scripts = SEED_SCRIPTS;
+        }
         state?.setHydrated();
       },
     }

@@ -59,7 +59,7 @@ Entrega:
    - titulo: título corto del capítulo (aparecerá como marcador de capítulo en YouTube).
    - resumen: 1-2 frases de qué trata.
    - guion: el desarrollo hablado completo de ese capítulo, con la profundidad adecuada a la duración total del vídeo. Sigue la regla de enseñar primero y mostrar la tecnología (si aplica) solo al final, apoyándote en el método OBSERVAR→MAPEAR→ENTENDER→DIAGNOSTICAR→DISEÑAR→IMPLEMENTAR→MEDIR→OPTIMIZAR cuando sea relevante.
-   - visual: para ese capítulo, describe qué mostrar en pantalla (queMostrar), qué se está explicando mientras tanto (queExplicar), sugerencias de b-roll, de capturas de pantalla (de Odoo u otra herramienta si aplica) y de diagramas o canvas de sistema que ayudarían a visualizarlo.
+   - visual: para ese capítulo, describe qué mostrar en pantalla (queMostrar), qué se está explicando mientras tanto (queExplicar), sugerencias de b-roll, de capturas de pantalla (de Odoo u otra herramienta si aplica) y de diagramas de sistema (pizarra, cajas y flechas) que ayudarían a visualizarlo.
 
 No inventes estadísticas ni casos reales con datos concretos; usa ejemplos genéricos ("imagina una empresa que...").
 

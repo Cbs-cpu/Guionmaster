@@ -6,24 +6,25 @@ dos servicios: implantaciones de sistemas con **Odoo** y **apps para
 entrenadores personales**.
 
 No es un SaaS ni un "AI writer" genérico: es una herramienta local de guionización
-con una metodología concreta (base de conocimiento, generadores, editor de
-3 columnas, canvas de sistemas y biblioteca), pensada para un único usuario.
+con una metodología concreta (biblioteca de conocimiento, generadores, editor de
+3 columnas y biblioteca de guiones), pensada para un único usuario.
 
-## Qué incluye (v1, spec §15)
+## Qué incluye
 
-1. **Base de conocimiento** (`/conocimiento`) — Systems Thinking, BPM, Value
-   Stream, Theory of Constraints, Information Silos, Enterprise Architecture,
-   Process Mining. Cada marco cita su fuente.
+1. **Biblioteca de conocimiento** (`/conocimiento`) — un documento por marco
+   (Systems Thinking, BPM, Value Stream, Theory of Constraints, Information
+   Silos, Enterprise Architecture, Process Mining), cada uno con su fuente
+   citada, navegable como archivos independientes.
 2. **Generador de Reels** (`/reels/nuevo`) — inputs → 5 hooks tipados → estructura
    completa (Hook → Problema → Consecuencia → Insight → Sistema → Beneficio → CTA).
 3. **Generador de YouTube** (`/youtube/nuevo`) — inputs → 5 títulos → hook, promesa,
    capítulos, guion y visuales por sección.
 4. **Editor** (`/editor/[id]`) — workspace de 3 columnas (Estructura · Guion · IA)
    con los 12 comandos de IA del spec y conversión Reel ↔ YouTube.
-5. **Canvas** (`/canvas`) — whiteboard de sistemas (cajas, personas, procesos,
-   bases de datos, inputs/outputs, cuellos de botella), con sugerencia por IA.
-6. **Biblioteca** (`/biblioteca`) — todos los guiones con estado, favoritos,
-   duplicar/eliminar.
+5. **Biblioteca** (`/biblioteca`) — todos los guiones con estado, favoritos,
+   duplicar/eliminar. Trae precargados 10 reels y 1 vídeo de YouTube de ejemplo
+   (ver `src/lib/seed-scripts.ts`) escritos a mano con la metodología del
+   estudio, para que la biblioteca no arranque vacía.
 
 Todo se guarda **en el navegador** (localStorage, vía Zustand) — no hay base
 de datos ni backend con estado. Las únicas llamadas de red son a la API de
@@ -38,8 +39,9 @@ npm run dev
 ```
 
 Abre [http://localhost:3000](http://localhost:3000). Sin `ANTHROPIC_API_KEY` la
-app funciona igual (navegación, base de conocimiento, canvas, biblioteca) pero
-los botones de generación con IA muestran un aviso explicando cómo activarla.
+app funciona igual (navegación, biblioteca de conocimiento, biblioteca de
+guiones con el contenido de ejemplo precargado) pero los botones de generación
+con IA muestran un aviso explicando cómo activarla.
 
 ## Desplegar en Vercel
 
@@ -72,3 +74,8 @@ guionización/copywriting/estrategia de contenido usadas como referencia al
 redactar los prompts de IA (`script-writer`, `scriptwriting-methodology`,
 `short-form-video`, `video-script`, `content-strategy`, `content-marketing`,
 `alterlab-pra-copywriter`).
+
+Además, este repo trae su propia skill **privada** del proyecto en
+`.claude/skills/guion-studio/SKILL.md`: el mismo método de guionización que usan
+los generadores de la app, pero para escribir un guion directamente en el chat
+con Claude Code, sin pasar por la API ni necesitar `ANTHROPIC_API_KEY`.

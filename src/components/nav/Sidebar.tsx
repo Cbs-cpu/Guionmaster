@@ -9,8 +9,7 @@ export const NAV_ITEMS = [
   { href: "/reels/nuevo", index: "01", label: "Nuevo Reel" },
   { href: "/youtube/nuevo", index: "02", label: "Nuevo Vídeo" },
   { href: "/biblioteca", index: "03", label: "Biblioteca" },
-  { href: "/canvas", index: "04", label: "Canvas" },
-  { href: "/conocimiento", index: "05", label: "Conocimiento" },
+  { href: "/conocimiento", index: "04", label: "Conocimiento" },
 ];
 
 export function Sidebar() {

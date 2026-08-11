@@ -14,10 +14,10 @@ const ACTIONS = [
     description: "Títulos, hook, promesa, capítulos y guion completo para YouTube.",
   },
   {
-    href: "/canvas",
+    href: "/biblioteca",
     index: "03",
-    title: "Canvas",
-    description: "Dibuja el sistema: cajas, flechas, cuellos de botella, inputs y outputs.",
+    title: "Biblioteca",
+    description: "Todos tus guiones: estado, favoritos, duplicar y editar.",
   },
   {
     href: "/conocimiento",

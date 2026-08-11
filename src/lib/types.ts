@@ -171,58 +171,7 @@ export interface ScriptRecord {
   chapters?: YoutubeChapter[];
 
   // shared
-  canvasId?: string;
   notes?: string;
-}
-
-export type CanvasNodeType =
-  | "caja"
-  | "persona"
-  | "sistema"
-  | "proceso"
-  | "base_datos"
-  | "herramienta"
-  | "input"
-  | "output"
-  | "cuello_botella";
-
-export const CANVAS_NODE_LABELS: Record<CanvasNodeType, string> = {
-  caja: "Caja",
-  persona: "Persona",
-  sistema: "Sistema",
-  proceso: "Proceso",
-  base_datos: "Base de datos",
-  herramienta: "Herramienta",
-  input: "Input",
-  output: "Output",
-  cuello_botella: "Cuello de botella",
-};
-
-export interface CanvasNode {
-  id: string;
-  type: CanvasNodeType;
-  label: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-export interface CanvasEdge {
-  id: string;
-  from: string;
-  to: string;
-  label?: string;
-}
-
-export interface CanvasBoard {
-  id: string;
-  title: string;
-  nodes: CanvasNode[];
-  edges: CanvasEdge[];
-  linkedScriptId?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface KnowledgeSource {

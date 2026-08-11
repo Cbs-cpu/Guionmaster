@@ -134,7 +134,7 @@ export function GuionPane({
           />
         </FieldShell>
         <div className="sm:col-span-2">
-          <FieldShell label="Diagramas / canvas">
+          <FieldShell label="Diagramas">
             <Textarea
               value={chapter.visual.diagramas}
               onChange={(e) => onUpdateChapter(chapter.id, { visual: { ...chapter.visual, diagramas: e.target.value } })}
