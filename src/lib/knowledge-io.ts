@@ -78,6 +78,61 @@ const RESERVED_IDS = new Set(KNOWLEDGE_BASE.map((c) => c.id));
 
 export class KnowledgeImportError extends Error {}
 
+/**
+ * Saca el JSON de lo que sea que haya pegado el usuario. En la práctica un LLM
+ * casi nunca devuelve JSON pelado: lo envuelve en ```json, le pone una frase
+ * antes ("Aquí tienes...") y a veces se cuelan comillas tipográficas o una coma
+ * de más. Se intentan varias limpiezas en orden, de menos a más agresiva, y se
+ * devuelve el primer resultado que parsee. undefined si nada funciona.
+ */
+function extractJson(input: string): unknown {
+  const attempts: string[] = [];
+  const push = (s: string) => {
+    const t = s.trim();
+    if (t && !attempts.includes(t)) attempts.push(t);
+  };
+
+  push(input);
+
+  // 1. Contenido dentro del primer bloque ``` / ```json.
+  const fence = input.match(/```(?:json|JSON)?\s*([\s\S]*?)```/);
+  if (fence?.[1]) push(fence[1]);
+
+  // 2. Si el bloque quedó abierto (respuesta cortada), todo lo que va después.
+  const openFence = input.match(/```(?:json|JSON)?\s*([\s\S]*)$/);
+  if (openFence?.[1]) push(openFence[1]);
+
+  // 3. Desde la primera llave/corchete hasta el último cierre: se quita
+  //    cualquier frase de alrededor.
+  for (const source of [...attempts]) {
+    const start = source.search(/[[{]/);
+    const end = Math.max(source.lastIndexOf("}"), source.lastIndexOf("]"));
+    if (start >= 0 && end > start) push(source.slice(start, end + 1));
+  }
+
+  // 4. Variantes con comillas tipográficas normalizadas y comas finales
+  //    eliminadas (dos errores habituales al copiar y pegar).
+  for (const source of [...attempts]) {
+    push(source.replace(/[“”„]/g, '"').replace(/[‘’]/g, "'"));
+    push(source.replace(/,(\s*[}\]])/g, "$1"));
+    push(
+      source
+        .replace(/[“”„]/g, '"')
+        .replace(/[‘’]/g, "'")
+        .replace(/,(\s*[}\]])/g, "$1")
+    );
+  }
+
+  for (const candidate of attempts) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // siguiente intento
+    }
+  }
+  return undefined;
+}
+
 export interface ImportResult {
   /** Documentos nuevos o actualizados, listos para guardar. */
   categories: KnowledgeCategory[];
@@ -103,12 +158,10 @@ export function parseImportedKnowledgeDetailed(raw: string): ImportResult {
   const trimmed = raw.trim();
   if (!trimmed) throw new KnowledgeImportError("El archivo está vacío.");
 
-  let json: unknown;
-  try {
-    json = JSON.parse(trimmed);
-  } catch {
+  const json = extractJson(trimmed);
+  if (json === undefined) {
     throw new KnowledgeImportError(
-      "El contenido no es JSON válido. Si lo has copiado de un chat, asegúrate de no incluir el texto de alrededor ni las comillas de bloque (```)."
+      "No he encontrado ningún JSON válido en lo que has pegado. Copia la respuesta del chat otra vez, asegurándote de incluir desde la primera llave { o corchete [ hasta la última."
     );
   }
 

@@ -2,12 +2,11 @@
 
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Textarea } from "@/components/ui/Field";
+import { Input, Textarea } from "@/components/ui/Field";
 import { useStudioStore } from "@/lib/store";
 import {
   KnowledgeImportError,
   buildResearchPrompt,
-  buildSchemaExample,
   downloadKnowledgeExport,
   parseImportedKnowledgeDetailed,
 } from "@/lib/knowledge-io";
@@ -21,10 +20,14 @@ export function KnowledgeIO() {
   const importKnowledgeCategories = useStudioStore((s) => s.importKnowledgeCategories);
 
   const [open, setOpen] = useState(false);
+  const [tema, setTema] = useState("");
   const [pasted, setPasted] = useState("");
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const [copied, setCopied] = useState<"prompt" | "formato" | null>(null);
+  const [copied, setCopied] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const promptRef = useRef<HTMLTextAreaElement>(null);
+
+  const prompt = buildResearchPrompt(tema.trim() || undefined);
 
   function runImport(raw: string, sourceLabel: string) {
     try {
@@ -58,13 +61,19 @@ export function KnowledgeIO() {
     e.target.value = "";
   }
 
-  async function copy(text: string, which: "prompt" | "formato") {
+  async function copyPrompt() {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(which);
-      setTimeout(() => setCopied(null), 2000);
+      await navigator.clipboard.writeText(prompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
-      setFeedback({ kind: "error", message: "El navegador ha bloqueado el portapapeles. Copia el texto a mano." });
+      // Si el navegador bloquea el portapapeles, al menos dejamos el texto
+      // seleccionado para poder copiarlo con Ctrl+C.
+      promptRef.current?.select();
+      setFeedback({
+        kind: "error",
+        message: "El navegador ha bloqueado el portapapeles. He seleccionado el texto: cópialo con Ctrl+C.",
+      });
     }
   }
 
@@ -74,8 +83,7 @@ export function KnowledgeIO() {
         <div>
           <p className="label-caps text-[10px] text-ink-faint mb-1">Importar / exportar</p>
           <p className="text-[13px] text-ink-soft leading-relaxed max-w-lg">
-            Saca el formato de los documentos para pedirle investigación a ChatGPT, y vuelve a meter aquí lo que te
-            devuelva.
+            Pídele investigación a ChatGPT con el formato de la app, y vuelve a meter aquí lo que te devuelva.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -91,41 +99,48 @@ export function KnowledgeIO() {
       </header>
 
       {open && (
-        <div className="border-t border-rule px-5 sm:px-6 py-5 space-y-5 animate-fade-up">
+        <div className="border-t border-rule px-5 sm:px-6 py-5 space-y-6 animate-fade-up">
           <div>
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <p className="label-caps text-[10px] text-ink-faint">1 · Pídeselo a ChatGPT</p>
-              <button
-                onClick={() => copy(buildResearchPrompt(), "prompt")}
-                className="press label-caps flex items-center gap-1.5 text-[10px] text-ink-soft hover:text-accent"
-              >
-                {copied === "prompt" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                {copied === "prompt" ? "Copiado" : "Copiar prompt"}
-              </button>
-            </div>
-            <p className="text-[13px] text-ink-soft leading-relaxed">
-              Copia el prompt, cambia el tema por el que quieras investigar y pégalo en ChatGPT. Ya incluye el formato
-              exacto y las reglas (citar fuentes reales, no inventar datos, español directo).
-            </p>
+            <p className="label-caps text-[10px] text-ink-faint mb-2">1 · Escribe el tema</p>
+            <Input
+              value={tema}
+              onChange={(e) => setTema(e.target.value)}
+              placeholder="Ej: teoría de colas aplicada a procesos de negocio"
+            />
           </div>
 
           <div>
             <div className="flex items-center justify-between gap-3 mb-2">
-              <p className="label-caps text-[10px] text-ink-faint">2 · Pega aquí su respuesta</p>
+              <p className="label-caps text-[10px] text-ink-faint">2 · Copia este prompt en ChatGPT</p>
               <button
-                onClick={() => copy(buildSchemaExample(), "formato")}
+                onClick={copyPrompt}
                 className="press label-caps flex items-center gap-1.5 text-[10px] text-ink-soft hover:text-accent"
               >
-                {copied === "formato" ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                {copied === "formato" ? "Copiado" : "Ver formato"}
+                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied ? "Copiado" : "Copiar prompt"}
               </button>
             </div>
             <Textarea
+              ref={promptRef}
+              readOnly
+              value={prompt}
+              onFocus={(e) => e.currentTarget.select()}
+              rows={12}
+              className="font-label text-[11.5px] leading-relaxed bg-paper-sunken/50"
+            />
+            <p className="text-[11px] text-ink-faint mt-1.5">
+              Incluye el formato completo y las reglas. Puedes desplazarte dentro del cuadro para leerlo entero.
+            </p>
+          </div>
+
+          <div>
+            <p className="label-caps text-[10px] text-ink-faint mb-2">3 · Pega aquí su respuesta</p>
+            <Textarea
               value={pasted}
               onChange={(e) => setPasted(e.target.value)}
-              rows={6}
-              placeholder='Pega aquí el JSON, por ejemplo: {"categorias": [{"nombre": "...", "ideaFundamental": "...", "fuente": {...}, "conceptos": [...]}]}'
-              className="font-label text-[12px] leading-relaxed"
+              rows={10}
+              placeholder="Pega la respuesta de ChatGPT tal cual. Da igual si trae texto alrededor o viene dentro de un bloque de código: se extrae el JSON automáticamente."
+              className="font-label text-[11.5px] leading-relaxed"
             />
             <div className="flex flex-wrap items-center gap-2 mt-2.5">
               <Button size="sm" onClick={() => runImport(pasted, "el texto pegado")} disabled={!pasted.trim()}>
