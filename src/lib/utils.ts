@@ -1,4 +1,5 @@
 import { customAlphabet } from "nanoid";
+import { twMerge } from "tailwind-merge";
 
 const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
 const idGen = customAlphabet(alphabet, 10);
@@ -8,7 +9,7 @@ export function makeId(prefix: string): string {
 }
 
 export function cn(...classes: Array<string | false | null | undefined>): string {
-  return classes.filter(Boolean).join(" ");
+  return twMerge(classes.filter(Boolean).join(" "));
 }
 
 export function formatDate(iso: string): string {

@@ -172,6 +172,7 @@ export interface ScriptRecord {
 
   // shared
   notes?: string;
+  resources?: ResourceLink[];
 }
 
 export interface KnowledgeSource {
@@ -187,49 +188,11 @@ export interface KnowledgeConcept {
   definicion: string;
 }
 
-export type EditorCommand =
-  | "mejorar"
-  | "mas_natural"
-  | "mas_directo"
-  | "mas_polemico"
-  | "mejorar_hook"
-  | "mejorar_cta"
-  | "acortar"
-  | "expandir"
-  | "cambiar_angulo"
-  | "anadir_storytelling"
-  | "anadir_ejemplo"
-  | "crear_analogia";
-
-export const EDITOR_COMMAND_LABELS: Record<EditorCommand, string> = {
-  mejorar: "Mejorar",
-  mas_natural: "Hacer más natural",
-  mas_directo: "Hacer más directo",
-  mas_polemico: "Hacer más polémico",
-  mejorar_hook: "Mejorar hook",
-  mejorar_cta: "Mejorar CTA",
-  acortar: "Acortar",
-  expandir: "Expandir",
-  cambiar_angulo: "Cambiar ángulo",
-  anadir_storytelling: "Añadir storytelling",
-  anadir_ejemplo: "Añadir ejemplo",
-  crear_analogia: "Crear analogía",
-};
-
-export const EDITOR_COMMAND_ORDER: EditorCommand[] = [
-  "mejorar",
-  "mas_natural",
-  "mas_directo",
-  "mas_polemico",
-  "mejorar_hook",
-  "mejorar_cta",
-  "acortar",
-  "expandir",
-  "cambiar_angulo",
-  "anadir_storytelling",
-  "anadir_ejemplo",
-  "crear_analogia",
-];
+export interface ResourceLink {
+  id: string;
+  titulo: string;
+  url: string;
+}
 
 export interface KnowledgeCategory {
   id: string;

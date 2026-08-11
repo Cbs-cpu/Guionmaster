@@ -19,8 +19,11 @@ con una metodología concreta (biblioteca de conocimiento, generadores, editor d
    completa (Hook → Problema → Consecuencia → Insight → Sistema → Beneficio → CTA).
 3. **Generador de YouTube** (`/youtube/nuevo`) — inputs → 5 títulos → hook, promesa,
    capítulos, guion y visuales por sección.
-4. **Editor** (`/editor/[id]`) — workspace de 3 columnas (Estructura · Guion · IA)
-   con los 12 comandos de IA del spec y conversión Reel ↔ YouTube.
+4. **Editor** (`/editor/[id]`) — workspace de 3 columnas: Estructura (navegación
+   y metadatos), Guion (lectura/edición, con un modo lectura tipo teleprompter
+   para grabar) y Recursos (enlaces de apoyo por guion — un PDF, una carpeta,
+   un artículo). Sin dependencia de IA: para reescribir o generar contenido se
+   usa el chat de Claude Code directamente (ver la skill `guion-studio` más abajo).
 5. **Biblioteca** (`/biblioteca`) — todos los guiones con estado, favoritos,
    duplicar/eliminar. Trae precargados 10 reels y 1 vídeo de YouTube de ejemplo
    (ver `src/lib/seed-scripts.ts`) escritos a mano con la metodología del
