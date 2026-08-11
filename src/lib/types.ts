@@ -201,4 +201,18 @@ export interface KnowledgeCategory {
   problema?: string;
   conceptos: KnowledgeConcept[];
   fuente: KnowledgeSource;
+
+  // Campos ampliados, pensados para el material que se importa desde fuera
+  // (por ejemplo, una investigación pedida a un LLM). Los 7 marcos que vienen
+  // de serie no los usan todos, por eso son opcionales.
+  resumen?: string;
+  aplicacion?: string;
+  ejemplos?: string[];
+  erroresComunes?: string[];
+  preguntasDiagnostico?: string[];
+  ideasContenido?: string[];
+
+  // Marca de procedencia: true si el documento se importó (no viene de serie).
+  importado?: boolean;
+  importadoEn?: string;
 }

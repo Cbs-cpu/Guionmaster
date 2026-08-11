@@ -14,7 +14,9 @@ con una metodología concreta (biblioteca de conocimiento, generadores, editor d
 1. **Biblioteca de conocimiento** (`/conocimiento`) — un documento por marco
    (Systems Thinking, BPM, Value Stream, Theory of Constraints, Information
    Silos, Enterprise Architecture, Process Mining), cada uno con su fuente
-   citada, navegable como archivos independientes.
+   citada, navegable como archivos independientes, con modo lectura a pantalla
+   completa y apuntes propios por documento. Se puede **importar y exportar**
+   (ver más abajo) para ampliar la biblioteca con investigación hecha fuera.
 2. **Generador de Reels** (`/reels/nuevo`) — inputs → 5 hooks tipados → estructura
    completa (Hook → Problema → Consecuencia → Insight → Sistema → Beneficio → CTA).
 3. **Generador de YouTube** (`/youtube/nuevo`) — inputs → 5 títulos → hook, promesa,
@@ -32,6 +34,54 @@ con una metodología concreta (biblioteca de conocimiento, generadores, editor d
 Todo se guarda **en el navegador** (localStorage, vía Zustand) — no hay base
 de datos ni backend con estado. Las únicas llamadas de red son a la API de
 Anthropic para generar contenido.
+
+## Formato de los documentos de conocimiento
+
+La biblioteca se puede exportar e importar en JSON, para poder pedirle a un LLM
+(ChatGPT, Claude…) que investigue un tema y meter el resultado en la app sin
+tocar código. En `/conocimiento` hay un botón **Exportar** (descarga toda la
+biblioteca), un botón **Importar** y, dentro de él, **Copiar prompt**: un prompt
+listo para pegar en ChatGPT que ya lleva el formato exacto y las reglas (citar
+fuentes reales, no inventar datos, español directo).
+
+La forma de un documento (`src/lib/knowledge-io.ts` es la fuente de verdad):
+
+```jsonc
+{
+  "categorias": [
+    {
+      // Obligatorios
+      "nombre": "Theory of Constraints",
+      "ideaFundamental": "El rendimiento global de un sistema está limitado por una o varias restricciones.",
+      "fuente": { "obraOMarco": "Theory of Constraints (\"The Goal\")", "autor": "Eliyahu M. Goldratt", "nota": "opcional" },
+      "conceptos": [
+        { "termino": "Bottleneck", "definicion": "El punto donde se acumula el trabajo porque la capacidad es menor que la demanda." }
+      ],
+
+      // Opcionales — material de estudio y de apoyo para guionizar
+      "resumen": "Explicación en prosa, 2-5 párrafos.",
+      "aplicacion": "Cómo aplica a una pyme con Odoo o a un negocio de entrenadores.",
+      "ejemplos": ["..."],
+      "erroresComunes": ["..."],
+      "preguntasDiagnostico": ["..."],
+      "ideasContenido": ["..."]
+    }
+  ]
+}
+```
+
+Notas de diseño:
+
+- Solo `nombre`, `ideaFundamental`, `fuente.obraOMarco` y `conceptos` son
+  obligatorios, para que una respuesta parcial de un LLM no falle al importar.
+- Se acepta tanto `{"categorias": [...]}` como `{"categories": [...]}` o un
+  array pelado, porque cada LLM lo envuelve de una forma.
+- El `id` se genera solo a partir del nombre si no viene, y **nunca puede pisar
+  uno de los 7 marcos de serie**: si reimportas un export completo, esos 7 se
+  omiten en vez de duplicarse, así que exportar/importar sirve de copia de
+  seguridad.
+- Los documentos importados quedan marcados como tal y se pueden eliminar desde
+  su propia página; los 7 de serie viven en el código y no se tocan.
 
 ## Poner en marcha en local
 

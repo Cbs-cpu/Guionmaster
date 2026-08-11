@@ -3,12 +3,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED_SCRIPTS } from "./seed-scripts";
-import type { ScriptRecord, ScriptStatus } from "./types";
+import type { KnowledgeCategory, ScriptRecord, ScriptStatus } from "./types";
 import { makeId } from "./utils";
 
 interface StudioState {
   scripts: ScriptRecord[];
   knowledgeNotes: Record<string, string>;
+  customKnowledge: KnowledgeCategory[];
   hydrated: boolean;
 
   addScript: (script: ScriptRecord) => void;
@@ -21,6 +22,9 @@ interface StudioState {
 
   setKnowledgeNote: (categoryId: string, text: string) => void;
 
+  importKnowledgeCategories: (categories: KnowledgeCategory[]) => void;
+  removeCustomCategory: (id: string) => void;
+
   setHydrated: () => void;
 }
 
@@ -29,6 +33,7 @@ export const useStudioStore = create<StudioState>()(
     (set, get) => ({
       scripts: [],
       knowledgeNotes: {},
+      customKnowledge: [],
       hydrated: false,
 
       addScript: (script) => set((s) => ({ scripts: [script, ...s.scripts] })),
@@ -75,6 +80,20 @@ export const useStudioStore = create<StudioState>()(
 
       setKnowledgeNote: (categoryId, text) =>
         set((s) => ({ knowledgeNotes: { ...s.knowledgeNotes, [categoryId]: text } })),
+
+      importKnowledgeCategories: (categories) =>
+        set((s) => {
+          const next = [...s.customKnowledge];
+          for (const cat of categories) {
+            const i = next.findIndex((c) => c.id === cat.id);
+            if (i >= 0) next[i] = cat;
+            else next.push(cat);
+          }
+          return { customKnowledge: next };
+        }),
+
+      removeCustomCategory: (id) =>
+        set((s) => ({ customKnowledge: s.customKnowledge.filter((c) => c.id !== id) })),
 
       setHydrated: () => set({ hydrated: true }),
     }),

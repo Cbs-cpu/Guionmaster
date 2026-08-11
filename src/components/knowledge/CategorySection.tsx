@@ -13,6 +13,13 @@ export function CategorySection({ category, index }: { category: KnowledgeCatego
         </blockquote>
       </header>
 
+      {category.resumen && (
+        <div className="px-6 sm:px-8 py-6 border-b border-rule">
+          <p className="label-caps text-[10px] text-ink-faint mb-3">Resumen</p>
+          <p className="text-sm text-ink leading-relaxed whitespace-pre-line">{category.resumen}</p>
+        </div>
+      )}
+
       <div className="px-6 sm:px-8 py-6">
         <p className="label-caps text-[10px] text-ink-faint mb-3">Conceptos</p>
         <dl className="divide-y divide-rule">
@@ -25,6 +32,18 @@ export function CategorySection({ category, index }: { category: KnowledgeCatego
         </dl>
       </div>
 
+      {category.aplicacion && (
+        <div className="px-6 sm:px-8 py-6 border-t border-rule">
+          <p className="label-caps text-[10px] text-ink-faint mb-3">Cómo aplica</p>
+          <p className="text-sm text-ink-soft leading-relaxed whitespace-pre-line">{category.aplicacion}</p>
+        </div>
+      )}
+
+      <ListBlock label="Ejemplos" items={category.ejemplos} />
+      <ListBlock label="Errores comunes" items={category.erroresComunes} />
+      <ListBlock label="Preguntas de diagnóstico" items={category.preguntasDiagnostico} />
+      <ListBlock label="Ideas de contenido" items={category.ideasContenido} />
+
       <footer className="px-6 sm:px-8 py-4 border-t border-rule bg-paper-sunken/40 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-ink-faint">
         <span className="label-caps text-[10px] text-blueprint">Fuente</span>
         <span>
@@ -34,5 +53,22 @@ export function CategorySection({ category, index }: { category: KnowledgeCatego
         {category.fuente.nota && <span className="italic">· {category.fuente.nota}</span>}
       </footer>
     </section>
+  );
+}
+
+function ListBlock({ label, items }: { label: string; items?: string[] }) {
+  if (!items?.length) return null;
+  return (
+    <div className="px-6 sm:px-8 py-6 border-t border-rule">
+      <p className="label-caps text-[10px] text-ink-faint mb-3">{label}</p>
+      <ul className="space-y-2">
+        {items.map((item, i) => (
+          <li key={i} className="text-sm text-ink-soft leading-relaxed flex gap-2.5">
+            <span className="label-caps text-[10px] text-accent mt-1 shrink-0">{i + 1}</span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
