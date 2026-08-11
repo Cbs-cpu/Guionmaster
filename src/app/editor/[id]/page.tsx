@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useStudioStore } from "@/lib/store";
+import { useUiStore } from "@/lib/uiStore";
 import type { ReelBeat, ScriptRecord, YoutubeChapter } from "@/lib/types";
 import { StructurePane } from "@/components/editor/StructurePane";
 import { GuionPane } from "@/components/editor/GuionPane";
@@ -62,6 +63,14 @@ function EditorWorkspace({ script }: { script: ScriptRecord }) {
   const [readMode, setReadMode] = useState(false);
   const [estructuraCollapsed, setEstructuraCollapsed] = useState(false);
   const [recursosCollapsed, setRecursosCollapsed] = useState(false);
+  const setChromeHidden = useUiStore((s) => s.setChromeHidden);
+
+  // El modo lectura pide pantalla completa: también oculta la navegación
+  // global de la app, no solo los paneles del propio editor.
+  useEffect(() => {
+    setChromeHidden(readMode);
+    return () => setChromeHidden(false);
+  }, [readMode, setChromeHidden]);
 
   function updateBeat(key: ReelBeat["key"], patch: Partial<ReelBeat>) {
     if (!script.beats) return;
@@ -84,7 +93,7 @@ function EditorWorkspace({ script }: { script: ScriptRecord }) {
   const gridColsKey = `${estructuraCollapsed ? 1 : 0}-${recursosCollapsed ? 1 : 0}`;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)] lg:h-screen">
+    <div className={cn("flex flex-col h-screen", !readMode && "h-[calc(100vh-3.5rem)] lg:h-screen")}>
       {!readMode && (
         <div className="lg:hidden flex border-b border-rule bg-paper-raised">
           {MOBILE_TABS.map((t) => (

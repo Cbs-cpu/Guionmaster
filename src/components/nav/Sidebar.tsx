@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useUiStore } from "@/lib/uiStore";
 
 export const NAV_ITEMS = [
   { href: "/", index: "00", label: "Panel" },
@@ -14,6 +15,9 @@ export const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const chromeHidden = useUiStore((s) => s.chromeHidden);
+
+  if (chromeHidden) return null;
 
   return (
     <aside className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col border-r border-rule bg-paper-raised">

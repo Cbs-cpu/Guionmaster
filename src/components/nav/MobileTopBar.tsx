@@ -4,9 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, SystemMark } from "./Sidebar";
+import { useUiStore } from "@/lib/uiStore";
 
 export function MobileTopBar() {
   const pathname = usePathname();
+  const chromeHidden = useUiStore((s) => s.chromeHidden);
+
+  if (chromeHidden) return null;
 
   return (
     <header className="lg:hidden sticky top-0 z-30 bg-paper-raised border-b border-rule">
