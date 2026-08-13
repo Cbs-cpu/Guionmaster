@@ -10,7 +10,10 @@ import { Button } from "@/components/ui/Button";
 import { useStudioStore } from "@/lib/store";
 import { useUiStore } from "@/lib/uiStore";
 import { useKnowledgeLibrary } from "@/lib/useKnowledgeLibrary";
-import type { KnowledgeCategory } from "@/lib/types";
+import { useScriptsFromKnowledge } from "@/lib/relations";
+import { SCRIPT_TYPE_LABELS, type KnowledgeCategory } from "@/lib/types";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { SCRIPT_TYPE_ICONS } from "@/components/ui/ContentIcons";
 import { Maximize2, Trash2 } from "lucide-react";
 
 export function KnowledgeDocView({ categoryId }: { categoryId: string }) {
@@ -141,6 +144,8 @@ function DocView({
         <CategorySection category={category} index={index} />
       </div>
 
+      <RelatedContent categoryId={category.id} />
+
       <div className="mt-4 paper-panel rounded-sm px-6 sm:px-8 py-6">
         <p className="label-caps text-[10px] text-ink-faint mb-3">Mis apuntes</p>
         <Textarea
@@ -189,6 +194,43 @@ function DocView({
           <span />
         )}
       </div>
+    </div>
+  );
+}
+
+function RelatedContent({ categoryId }: { categoryId: string }) {
+  const scripts = useScriptsFromKnowledge(categoryId);
+
+  return (
+    <div className="mt-4 paper-panel rounded-sm px-6 sm:px-8 py-6">
+      <p className="label-caps text-[10px] text-ink-faint mb-1">Contenido que sale de aquí</p>
+      {scripts.length === 0 ? (
+        <p className="text-[13px] text-ink-faint leading-relaxed">
+          Ningún guion cita todavía este marco. En el editor de un guion, panel{" "}
+          <span className="text-ink-soft">Recursos → Entrelazado → Viene de</span>, puedes marcarlo como origen.
+        </p>
+      ) : (
+        <ul className="mt-3 divide-y divide-rule">
+          {scripts.map((s) => {
+            const Icon = SCRIPT_TYPE_ICONS[s.type];
+            return (
+              <li key={s.id}>
+                <Link
+                  href={`/editor/${s.id}`}
+                  className="group flex items-center gap-3 py-2.5 transition-colors hover:text-accent"
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-blueprint" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm">{s.title}</span>
+                    <span className="label-caps block text-[9.5px] text-ink-faint">{SCRIPT_TYPE_LABELS[s.type]}</span>
+                  </span>
+                  <StatusBadge status={s.status} />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

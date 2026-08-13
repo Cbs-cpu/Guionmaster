@@ -21,19 +21,81 @@ con una metodología concreta (biblioteca de conocimiento, generadores, editor d
    completa (Hook → Problema → Consecuencia → Insight → Sistema → Beneficio → CTA).
 3. **Generador de YouTube** (`/youtube/nuevo`) — inputs → 5 títulos → hook, promesa,
    capítulos, guion y visuales por sección.
-4. **Editor** (`/editor/[id]`) — workspace de 3 columnas: Estructura (navegación
-   y metadatos), Guion (lectura/edición, con un modo lectura tipo teleprompter
-   para grabar) y Recursos (enlaces de apoyo por guion — un PDF, una carpeta,
-   un artículo). Sin dependencia de IA: para reescribir o generar contenido se
-   usa el chat de Claude Code directamente (ver la skill `guion-studio` más abajo).
-5. **Biblioteca** (`/biblioteca`) — todos los guiones con estado, favoritos,
-   duplicar/eliminar. Trae precargados 10 reels y 1 vídeo de YouTube de ejemplo
-   (ver `src/lib/seed-scripts.ts`) escritos a mano con la metodología del
-   estudio, para que la biblioteca no arranque vacía.
+4. **Generador de carruseles** (`/carrusel/nuevo`) — inputs → 4-10 slides en 4:5
+   listos para Instagram, con vista previa deslizable tipo feed y pie de
+   publicación. El ritmo visual (portada clara → alternancia claro/oscuro →
+   cierre sobre degradado, con barra de progreso y flecha de swipe en cada
+   slide) lo impone la app, no el modelo.
+5. **Editor** (`/editor/[id]`) — workspace de 3 columnas: Estructura (navegación
+   y metadatos), Guion (edición, **modo lectura** tipo teleprompter y **modo
+   guion** con las marcas de edición reveladas) y Recursos (documentos
+   entrelazados + enlaces de apoyo). Sin dependencia de IA: para reescribir o
+   generar contenido se usa el chat de Claude Code directamente (ver la skill
+   `guion-studio` más abajo).
+6. **Biblioteca** (`/biblioteca`) — todos los guiones con estado, favoritos,
+   duplicar/eliminar. Trae precargados reels, vídeos de YouTube y un carrusel
+   de ejemplo (ver `src/lib/seed-scripts.ts`) escritos a mano con la metodología
+   del estudio, para que la biblioteca no arranque vacía.
+7. **Fuentes** (`/fuentes`) — archivo del contenido que ya existe (reels, vídeos
+   de YouTube y carruseles, propios o de referencia) guardado con su
+   transcripción completa, para poder buscar por una frase suelta y recuperar de
+   qué pieza salió. Arranca vacío y se rellena importando un JSON.
+
+### Documentos entrelazados
+
+Cada guion declara de qué marcos de conocimiento nace (`Recursos → Entrelazado →
+Viene de`) y con qué otros contenidos forma familia (el vídeo largo, los reels
+que salen de él, el carrusel que lo resume). Los vínculos entre contenidos son
+**simétricos**: se guardan en los dos guiones a la vez desde el store, así que
+desde un reel se ve su vídeo de YouTube y desde el vídeo se ven sus reels. La
+ficha de cada marco de conocimiento lista, a su vez, todo el contenido que sale
+de él.
+
+### Modo guion
+
+El texto hablado se puede anotar con una sintaxis que viaja dentro del propio
+guion y solo se revela en el modo guion:
+
+| Sintaxis | Qué hace |
+| --- | --- |
+| `*palabra*` | Énfasis: se subraya, se dice con intención |
+| `**palabra**` | Clave: se resalta, es la idea que no se puede perder |
+| `[pausa]` `[corte]` `[zoom]` | Marcas de edición sin contenido |
+| `[sub: texto]` `[anim: …]` `[broll: …]` `[grafico: …]` `[nota: …]` | Marcas con contenido |
+
+No hace falta memorizarla: bajo cada bloque de texto hay una botonera que las
+inserta en el cursor (y envuelve la selección, si hay). El modo guion muestra
+además las notas de producción del bloque (tiempo, texto en pantalla, visual)
+en un carril lateral, y descuenta las marcas del cálculo de duración.
 
 Todo se guarda **en el navegador** (localStorage, vía Zustand) — no hay base
 de datos ni backend con estado. Las únicas llamadas de red son a la API de
 Anthropic para generar contenido.
+
+## Formato del archivo de fuentes
+
+`/fuentes` importa un JSON con esta forma (`src/lib/sources-io.ts` es la fuente
+de verdad). Solo `titulo` y `transcripcion` son obligatorios; el resto se
+rellena si viene, y se aceptan tanto `{"fuentes": […]}` como `{"sources": […]}`
+o un array pelado:
+
+```jsonc
+{
+  "fuentes": [
+    {
+      "plataforma": "youtube",        // "reel" | "youtube" | "instagram"
+      "titulo": "Por qué automatizar un proceso roto no arregla nada",
+      "autor": "Canal de referencia",
+      "url": "https://…",
+      "publicadoEn": "2026-02-14",
+      "duracion": "14:20",
+      "temas": ["automatización", "procesos"],
+      "resumen": "Dos frases con la idea principal.",
+      "transcripcion": "Texto completo de lo que se dice…"
+    }
+  ]
+}
+```
 
 ## Formato de los documentos de conocimiento
 

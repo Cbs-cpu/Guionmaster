@@ -7,7 +7,15 @@ import { ScriptCard } from "@/components/library/ScriptCard";
 import { Input, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { useStudioStore } from "@/lib/store";
-import { SCRIPT_STATUSES, SERVICIO_LABELS, STATUS_LABELS, type ScriptStatus, type ScriptType, type Servicio } from "@/lib/types";
+import {
+  SCRIPT_STATUSES,
+  SCRIPT_TYPE_LABELS,
+  SERVICIO_LABELS,
+  STATUS_LABELS,
+  type ScriptStatus,
+  type ScriptType,
+  type Servicio,
+} from "@/lib/types";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,12 +45,17 @@ export default function BibliotecaPage() {
       <PageHeader
         eyebrow="Biblioteca"
         title="Tus guiones"
-        description="Reels y vídeos de YouTube, con su estado de producción."
+        description="Reels, vídeos de YouTube y carruseles, con su estado de producción."
         action={
           <div className="flex gap-2">
             <Link href="/reels/nuevo">
               <Button variant="secondary" size="sm">
                 + Reel
+              </Button>
+            </Link>
+            <Link href="/carrusel/nuevo">
+              <Button variant="secondary" size="sm">
+                + Carrusel
               </Button>
             </Link>
             <Link href="/youtube/nuevo">
@@ -61,8 +74,11 @@ export default function BibliotecaPage() {
         />
         <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as ScriptType | "todos")} className="sm:w-36">
           <option value="todos">Todos los tipos</option>
-          <option value="reel">Reel</option>
-          <option value="youtube">YouTube</option>
+          {Object.entries(SCRIPT_TYPE_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
         </Select>
         <Select
           value={statusFilter}
