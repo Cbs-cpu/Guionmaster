@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useStudioStore } from "@/lib/store";
-import { SERVICIO_LABELS, type ScriptRecord } from "@/lib/types";
+import { SCRIPT_TYPE_LABELS, SERVICIO_LABELS, type ScriptRecord } from "@/lib/types";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { StaticTag } from "@/components/ui/Chip";
 import { formatDate } from "@/lib/utils";
-import { Copy, Trash2, Star } from "lucide-react";
+import { Copy, Link2, Trash2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ScriptCard({ script, compact }: { script: ScriptRecord; compact?: boolean }) {
@@ -15,14 +15,13 @@ export function ScriptCard({ script, compact }: { script: ScriptRecord; compact?
   const deleteScript = useStudioStore((s) => s.deleteScript);
   const toggleFavorite = useStudioStore((s) => s.toggleFavorite);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const links = (script.knowledgeIds?.length ?? 0) + (script.relatedScriptIds?.length ?? 0);
 
   return (
     <div className="hover-lift paper-panel rounded-sm px-5 py-4 flex flex-col gap-3 group">
       <div className="flex items-start justify-between gap-3">
         <Link href={`/editor/${script.id}`} className="min-w-0">
-          <p className="label-caps text-[10px] text-blueprint mb-1">
-            {script.type === "reel" ? "Reel" : "YouTube"}
-          </p>
+          <p className="label-caps text-[10px] text-blueprint mb-1">{SCRIPT_TYPE_LABELS[script.type]}</p>
           <h3 className="font-display text-[1.1rem] leading-snug truncate group-hover:text-accent transition-colors">
             {script.title}
           </h3>
@@ -52,6 +51,15 @@ export function ScriptCard({ script, compact }: { script: ScriptRecord; compact?
         <div className="flex items-center gap-3">
           <StatusBadge status={script.status} />
           <span className="text-[11px] text-ink-faint">{formatDate(script.updatedAt)}</span>
+          {links > 0 && (
+            <span
+              title={`${links} documento${links === 1 ? "" : "s"} entrelazado${links === 1 ? "" : "s"}`}
+              className="flex items-center gap-1 text-[11px] text-ink-faint"
+            >
+              <Link2 className="h-3 w-3" />
+              {links}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button

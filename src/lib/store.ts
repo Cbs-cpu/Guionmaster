@@ -3,13 +3,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SEED_SCRIPTS } from "./seed-scripts";
-import type { KnowledgeCategory, ScriptRecord, ScriptStatus } from "./types";
+import type { ContentSource, KnowledgeCategory, ScriptRecord, ScriptStatus } from "./types";
 import { makeId } from "./utils";
 
 interface StudioState {
   scripts: ScriptRecord[];
   knowledgeNotes: Record<string, string>;
   customKnowledge: KnowledgeCategory[];
+  sources: ContentSource[];
   seededScriptIds: string[];
   hydrated: boolean;
 
@@ -21,10 +22,16 @@ interface StudioState {
   setStatus: (id: string, status: ScriptStatus) => void;
   getScript: (id: string) => ScriptRecord | undefined;
 
+  toggleScriptKnowledge: (scriptId: string, categoryId: string) => void;
+  toggleScriptLink: (aId: string, bId: string) => void;
+
   setKnowledgeNote: (categoryId: string, text: string) => void;
 
   importKnowledgeCategories: (categories: KnowledgeCategory[]) => void;
   removeCustomCategory: (id: string) => void;
+
+  addSources: (sources: ContentSource[]) => void;
+  removeSource: (id: string) => void;
 
   setHydrated: () => void;
 }
@@ -35,6 +42,7 @@ export const useStudioStore = create<StudioState>()(
       scripts: [],
       knowledgeNotes: {},
       customKnowledge: [],
+      sources: [],
       seededScriptIds: [],
       hydrated: false,
 
@@ -47,7 +55,16 @@ export const useStudioStore = create<StudioState>()(
           ),
         })),
 
-      deleteScript: (id) => set((s) => ({ scripts: s.scripts.filter((sc) => sc.id !== id) })),
+      deleteScript: (id) =>
+        set((s) => ({
+          scripts: s.scripts
+            .filter((sc) => sc.id !== id)
+            .map((sc) =>
+              sc.relatedScriptIds?.includes(id)
+                ? { ...sc, relatedScriptIds: sc.relatedScriptIds.filter((r) => r !== id) }
+                : sc
+            ),
+        })),
 
       duplicateScript: (id) => {
         const original = get().scripts.find((sc) => sc.id === id);
@@ -61,6 +78,10 @@ export const useStudioStore = create<StudioState>()(
           favorite: false,
           createdAt: now,
           updatedAt: now,
+          // Los vínculos entre contenidos son simétricos; una copia que
+          // apuntase a B sin que B le devolviera el vínculo rompería esa
+          // simetría, así que la copia nace sin correlaciones.
+          relatedScriptIds: [],
         };
         set((s) => ({ scripts: [copy, ...s.scripts] }));
         return copy.id;
@@ -80,6 +101,36 @@ export const useStudioStore = create<StudioState>()(
 
       getScript: (id) => get().scripts.find((sc) => sc.id === id),
 
+      toggleScriptKnowledge: (scriptId, categoryId) =>
+        set((s) => ({
+          scripts: s.scripts.map((sc) => {
+            if (sc.id !== scriptId) return sc;
+            const current = sc.knowledgeIds ?? [];
+            const next = current.includes(categoryId)
+              ? current.filter((k) => k !== categoryId)
+              : [...current, categoryId];
+            return { ...sc, knowledgeIds: next, updatedAt: new Date().toISOString() };
+          }),
+        })),
+
+      toggleScriptLink: (aId, bId) =>
+        set((s) => {
+          if (aId === bId) return s;
+          const a = s.scripts.find((sc) => sc.id === aId);
+          const linked = a?.relatedScriptIds?.includes(bId) ?? false;
+          const now = new Date().toISOString();
+          const apply = (sc: ScriptRecord, otherId: string) => {
+            const current = sc.relatedScriptIds ?? [];
+            const next = linked ? current.filter((r) => r !== otherId) : [...current, otherId];
+            return { ...sc, relatedScriptIds: next, updatedAt: now };
+          };
+          return {
+            scripts: s.scripts.map((sc) =>
+              sc.id === aId ? apply(sc, bId) : sc.id === bId ? apply(sc, aId) : sc
+            ),
+          };
+        }),
+
       setKnowledgeNote: (categoryId, text) =>
         set((s) => ({ knowledgeNotes: { ...s.knowledgeNotes, [categoryId]: text } })),
 
@@ -96,6 +147,19 @@ export const useStudioStore = create<StudioState>()(
 
       removeCustomCategory: (id) =>
         set((s) => ({ customKnowledge: s.customKnowledge.filter((c) => c.id !== id) })),
+
+      addSources: (sources) =>
+        set((s) => {
+          const next = [...s.sources];
+          for (const source of sources) {
+            const i = next.findIndex((x) => x.id === source.id);
+            if (i >= 0) next[i] = source;
+            else next.unshift(source);
+          }
+          return { sources: next };
+        }),
+
+      removeSource: (id) => set((s) => ({ sources: s.sources.filter((x) => x.id !== id) })),
 
       setHydrated: () => set({ hydrated: true }),
     }),

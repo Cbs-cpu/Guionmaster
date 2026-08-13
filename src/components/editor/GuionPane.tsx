@@ -1,12 +1,30 @@
 "use client";
 
-import { useMemo } from "react";
-import { FieldShell, Input, Textarea } from "@/components/ui/Field";
+import { useMemo, useRef } from "react";
+import { FieldShell, Input, Select, Textarea } from "@/components/ui/Field";
 import { ReadFlow, type ReadFlowSection } from "@/components/ui/ReadFlow";
-import { REEL_BEAT_LABELS, REEL_BEAT_ORDER, type ReelBeat, type ScriptRecord, type YoutubeChapter } from "@/lib/types";
+import { CarouselSlideView } from "@/components/carousel/CarouselSlideView";
+import { MarkedText, MarkLegend, MarkToolbar } from "./ScriptMarks";
+import {
+  CAROUSEL_SLIDE_LABELS,
+  REEL_BEAT_LABELS,
+  REEL_BEAT_ORDER,
+  type CarouselBackground,
+  type CarouselSlide,
+  type CarouselSlideKind,
+  type ReelBeat,
+  type ScriptRecord,
+  type YoutubeChapter,
+} from "@/lib/types";
 import { estimateSpeakingSeconds, formatSeconds } from "@/lib/utils";
-import { Maximize2 } from "lucide-react";
-import type { ActiveBlock } from "./types";
+import { stripScriptMarks } from "@/lib/script-marks";
+import { Maximize2, SquarePen } from "lucide-react";
+import type { ActiveBlock, ViewMode } from "./types";
+
+interface Cue {
+  label: string;
+  value: string;
+}
 
 interface Section {
   id: string;
@@ -14,11 +32,13 @@ interface Section {
   label: string;
   text: string;
   onChange: (v: string) => void;
+  cues: Cue[];
 }
 
 function activeToId(active: ActiveBlock): string {
   if (active.kind === "beat") return `beat:${active.key}`;
   if (active.kind === "chapter") return `chapter:${active.id}`;
+  if (active.kind === "slide") return `slide:${active.id}`;
   return "meta";
 }
 
@@ -39,6 +59,11 @@ function useSections(
           label: REEL_BEAT_LABELS[key],
           text: beat?.textoHablado ?? "",
           onChange: (v: string) => onUpdateBeat(key, { textoHablado: v }),
+          cues: [
+            { label: "Tiempo", value: beat?.tiempoAprox ?? "" },
+            { label: "En pantalla", value: beat?.textoPantalla ?? "" },
+            { label: "Visual", value: beat?.visualSugerido ?? "" },
+          ].filter((c) => c.value),
         };
       });
     }
@@ -49,6 +74,7 @@ function useSections(
       label: "Hook (apertura)",
       text: script.youtubeHook ?? "",
       onChange: (v: string) => onUpdateMeta({ youtubeHook: v }),
+      cues: script.promesa ? [{ label: "Promesa", value: script.promesa }] : [],
     };
     const chapterSections: Section[] = (script.chapters ?? []).map((c) => {
       const active: ActiveBlock = { kind: "chapter", id: c.id };
@@ -58,6 +84,12 @@ function useSections(
         label: c.titulo,
         text: c.guion,
         onChange: (v: string) => onUpdateChapter(c.id, { guion: v }),
+        cues: [
+          { label: "Qué mostrar", value: c.visual.queMostrar },
+          { label: "B-roll", value: c.visual.bRoll },
+          { label: "Capturas", value: c.visual.capturas },
+          { label: "Diagramas", value: c.visual.diagramas },
+        ].filter((cue) => cue.value),
       };
     });
     return [metaSection, ...chapterSections];
@@ -67,25 +99,52 @@ function useSections(
 export function GuionPane({
   script,
   active,
-  readMode,
-  onToggleReadMode,
+  viewMode,
+  onSetViewMode,
   onNavigateActive,
   onUpdateBeat,
   onUpdateChapter,
   onUpdateMeta,
+  onUpdateSlide,
 }: {
   script: ScriptRecord;
   active: ActiveBlock;
-  readMode: boolean;
-  onToggleReadMode: () => void;
+  viewMode: ViewMode;
+  onSetViewMode: (mode: ViewMode) => void;
   onNavigateActive: (active: ActiveBlock) => void;
   onUpdateBeat: (key: ReelBeat["key"], patch: Partial<ReelBeat>) => void;
   onUpdateChapter: (id: string, patch: Partial<YoutubeChapter>) => void;
   onUpdateMeta: (patch: { youtubeHook?: string; promesa?: string }) => void;
+  onUpdateSlide: (id: string, patch: Partial<CarouselSlide>) => void;
 }) {
   const sections = useSections(script, onUpdateBeat, onUpdateChapter, onUpdateMeta);
+  const slides = script.slides ?? [];
 
-  if (readMode) {
+  if (script.type === "carrusel" && viewMode !== "edicion") {
+    const flowSections: ReadFlowSection[] = slides.map((slide, i) => ({
+      id: `slide:${slide.id}`,
+      label: CAROUSEL_SLIDE_LABELS[slide.kind],
+      content: (
+        <div className="mx-auto max-w-sm space-y-4">
+          <CarouselSlideView slide={slide} index={i} total={slides.length} className="rounded-sm border border-rule" />
+          {viewMode === "guion" && slide.notaVisual && (
+            <CueRail cues={[{ label: "Visual", value: slide.notaVisual }]} />
+          )}
+        </div>
+      ),
+    }));
+    return (
+      <ReadFlow
+        sections={flowSections}
+        initialId={activeToId(active)}
+        modeLabel={viewMode === "guion" ? "Modo guion" : "Modo lectura"}
+        onIndexChange={(_, i) => onNavigateActive({ kind: "slide", id: slides[i].id })}
+        onExit={() => onSetViewMode("edicion")}
+      />
+    );
+  }
+
+  if (viewMode === "lectura") {
     const flowSections: ReadFlowSection[] = sections.map((s) => ({
       id: s.id,
       label: s.label,
@@ -98,7 +157,7 @@ export function GuionPane({
             placeholder="Escribe aquí el texto que se dice a cámara…"
             className="font-display text-2xl sm:text-[1.75rem] leading-[1.75] border-none bg-transparent shadow-none px-0 py-1 focus:ring-0 resize-none"
           />
-          <p className="text-[11px] text-ink-faint mt-2">~{formatSeconds(estimateSpeakingSeconds(s.text))} al leerlo</p>
+          <p className="text-[11px] text-ink-faint mt-2">~{formatSeconds(speakingSeconds(s.text))} al leerlo</p>
         </>
       ),
     }));
@@ -106,21 +165,67 @@ export function GuionPane({
       <ReadFlow
         sections={flowSections}
         initialId={activeToId(active)}
+        modeLabel="Modo lectura"
         onIndexChange={(_, i) => onNavigateActive(sections[i].active)}
-        onExit={onToggleReadMode}
+        onExit={() => onSetViewMode("edicion")}
       />
     );
   }
 
-  const header = (
-    <button
-      onClick={onToggleReadMode}
-      className="press label-caps flex items-center gap-1.5 text-[10px] text-ink-faint hover:text-accent shrink-0"
-    >
-      <Maximize2 className="h-3 w-3" />
-      Modo lectura
-    </button>
-  );
+  if (viewMode === "guion") {
+    const flowSections: ReadFlowSection[] = sections.map((s) => ({
+      id: s.id,
+      label: s.label,
+      content: (
+        <>
+          <MarkedText text={s.text} className="font-display text-2xl sm:text-[1.75rem] leading-[1.75]" />
+          <p className="text-[11px] text-ink-faint mt-3">~{formatSeconds(speakingSeconds(s.text))} al leerlo</p>
+          {s.cues.length > 0 && <CueRail cues={s.cues} className="mt-5" />}
+        </>
+      ),
+    }));
+    return (
+      <ReadFlow
+        sections={flowSections}
+        initialId={activeToId(active)}
+        modeLabel="Modo guion"
+        toolbar={<MarkLegendToggle />}
+        onIndexChange={(_, i) => onNavigateActive(sections[i].active)}
+        onExit={() => onSetViewMode("edicion")}
+      />
+    );
+  }
+
+  const header = <ModeButtons onSetViewMode={onSetViewMode} />;
+
+  if (script.type === "carrusel") {
+    const slide = slides.find((s) => active.kind === "slide" && s.id === active.id) ?? slides[0];
+    if (!slide) return <EmptyState />;
+    const position = slides.indexOf(slide);
+    return (
+      <div className="mx-auto max-w-2xl p-5 sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <span className="label-caps text-[10px] text-ink-faint">
+            Slide {position + 1} · {CAROUSEL_SLIDE_LABELS[slide.kind]}
+          </span>
+          {header}
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-[1fr_15rem]">
+          <SlideForm slide={slide} onUpdate={(patch) => onUpdateSlide(slide.id, patch)} />
+          <div className="order-first sm:order-last">
+            <CarouselSlideView
+              slide={slide}
+              index={position}
+              total={slides.length}
+              className="rounded-sm border border-rule"
+            />
+            <p className="mt-2 text-[11px] text-ink-faint">Vista previa 4:5</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (active.kind === "beat") {
     const beat = script.beats?.find((b) => b.key === active.key);
@@ -183,7 +288,7 @@ export function GuionPane({
     );
   }
 
-  const chapter = script.chapters?.find((c) => c.id === active.id);
+  const chapter = script.chapters?.find((c) => active.kind === "chapter" && c.id === active.id);
   if (!chapter) return <EmptyState />;
 
   return (
@@ -255,6 +360,126 @@ export function GuionPane({
   );
 }
 
+/** Las marcas de edición no se pronuncian, así que no cuentan para el tiempo. */
+function speakingSeconds(text: string): number {
+  return estimateSpeakingSeconds(stripScriptMarks(text));
+}
+
+function ModeButtons({ onSetViewMode }: { onSetViewMode: (mode: ViewMode) => void }) {
+  return (
+    <div className="flex shrink-0 items-center gap-2.5">
+      <button
+        onClick={() => onSetViewMode("lectura")}
+        className="press label-caps flex items-center gap-1.5 text-[10px] text-ink-faint hover:text-accent"
+      >
+        <Maximize2 className="h-3 w-3" />
+        Lectura
+      </button>
+      <button
+        onClick={() => onSetViewMode("guion")}
+        title="Pantalla completa con las marcas de edición reveladas"
+        className="press label-caps flex items-center gap-1.5 text-[10px] text-ink-faint hover:text-accent"
+      >
+        <SquarePen className="h-3 w-3" />
+        Guion
+      </button>
+    </div>
+  );
+}
+
+function MarkLegendToggle() {
+  return (
+    <span className="hidden xl:block mr-2 pr-2 border-r border-rule">
+      <MarkLegend />
+    </span>
+  );
+}
+
+function CueRail({ cues, className }: { cues: Cue[]; className?: string }) {
+  return (
+    <ul className={className}>
+      {cues.map((cue) => (
+        <li key={cue.label} className="flex gap-3 border-l-2 border-blueprint/40 pl-3 py-1">
+          <span className="label-caps w-24 shrink-0 text-[9.5px] text-blueprint">{cue.label}</span>
+          <span className="text-[13px] leading-snug text-ink-soft">{cue.value}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SlideForm({ slide, onUpdate }: { slide: CarouselSlide; onUpdate: (patch: Partial<CarouselSlide>) => void }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <FieldShell label="Tipo de slide">
+          <Select
+            value={slide.kind}
+            onChange={(e) => onUpdate({ kind: e.target.value as CarouselSlideKind })}
+            className="text-xs py-1.5"
+          >
+            {Object.entries(CAROUSEL_SLIDE_LABELS).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </Select>
+        </FieldShell>
+        <FieldShell label="Fondo">
+          <Select
+            value={slide.fondo}
+            onChange={(e) => onUpdate({ fondo: e.target.value as CarouselBackground })}
+            className="text-xs py-1.5"
+          >
+            <option value="claro">Claro</option>
+            <option value="oscuro">Oscuro</option>
+            <option value="degradado">Degradado</option>
+          </Select>
+        </FieldShell>
+      </div>
+
+      <FieldShell label="Etiqueta" hint="El rótulo pequeño de arriba">
+        <Input
+          value={slide.etiqueta}
+          onChange={(e) => onUpdate({ etiqueta: e.target.value })}
+          className="text-xs py-1.5"
+        />
+      </FieldShell>
+
+      <FieldShell label="Titular">
+        <Textarea
+          value={slide.titular}
+          onChange={(e) => onUpdate({ titular: e.target.value })}
+          rows={2}
+          className="font-display text-[15px]"
+        />
+      </FieldShell>
+
+      <FieldShell label="Cuerpo">
+        <Textarea value={slide.cuerpo} onChange={(e) => onUpdate({ cuerpo: e.target.value })} rows={3} className="text-xs" />
+      </FieldShell>
+
+      <FieldShell label="Puntos" hint="Uno por línea">
+        <Textarea
+          value={slide.puntos.join("\n")}
+          onChange={(e) => onUpdate({ puntos: e.target.value.split("\n").filter((p) => p.trim()) })}
+          rows={4}
+          className="text-xs"
+        />
+      </FieldShell>
+
+      <FieldShell label="Nota visual" hint="Qué imagen o captura acompaña al slide">
+        <Textarea
+          value={slide.notaVisual}
+          onChange={(e) => onUpdate({ notaVisual: e.target.value })}
+          rows={2}
+          className="text-xs"
+        />
+      </FieldShell>
+    </div>
+  );
+}
+
 function SpokenText({
   label,
   value,
@@ -266,7 +491,23 @@ function SpokenText({
   onChange: (v: string) => void;
   headerRight: React.ReactNode;
 }) {
-  const seconds = estimateSpeakingSeconds(value);
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const seconds = speakingSeconds(value);
+
+  function insert(snippet: string) {
+    const el = ref.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = value.slice(start, end);
+    const out = selected ? snippet.replace("texto", selected) : snippet;
+    onChange(value.slice(0, start) + out + value.slice(end));
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + out.length, start + out.length);
+    });
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-2">
@@ -277,12 +518,14 @@ function SpokenText({
         </div>
       </div>
       <Textarea
+        ref={ref}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={6}
         placeholder="Escribe aquí el texto que se dice a cámara…"
         className="font-display leading-[1.75] text-[15px]"
       />
+      <MarkToolbar onInsert={insert} className="mt-2" />
     </div>
   );
 }

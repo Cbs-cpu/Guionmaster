@@ -19,11 +19,15 @@ export function ReadFlow({
   initialId,
   onIndexChange,
   onExit,
+  modeLabel,
+  toolbar,
 }: {
   sections: ReadFlowSection[];
   initialId?: string;
   onIndexChange?: (section: ReadFlowSection, index: number) => void;
   onExit: () => void;
+  modeLabel?: string;
+  toolbar?: React.ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -78,10 +82,18 @@ export function ReadFlow({
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between gap-3 px-5 sm:px-8 py-3 border-b border-rule bg-paper-raised shrink-0">
-        <span className="label-caps text-[10px] text-ink-faint truncate">
-          {currentIndex + 1} / {sections.length} · {sections[currentIndex]?.label}
+        <span className="flex min-w-0 items-center gap-2">
+          {modeLabel && (
+            <span className="label-caps shrink-0 rounded-full bg-ink px-2 py-0.5 text-[9px] text-paper">
+              {modeLabel}
+            </span>
+          )}
+          <span className="label-caps text-[10px] text-ink-faint truncate">
+            {currentIndex + 1} / {sections.length} · {sections[currentIndex]?.label}
+          </span>
         </span>
         <div className="flex items-center gap-1 shrink-0">
+          {toolbar}
           <button
             onClick={() => goTo(currentIndex - 1)}
             disabled={currentIndex === 0}

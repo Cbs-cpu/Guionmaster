@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
+import { LinksSection } from "./LinksSection";
 import { makeId } from "@/lib/utils";
 import type { ResourceLink, ScriptRecord } from "@/lib/types";
 import { ExternalLink, FileText, Trash2 } from "lucide-react";
@@ -38,6 +39,8 @@ export function ResourcesPanel({
 
   return (
     <div className="p-4 flex flex-col h-full">
+      <LinksSection script={script} />
+
       <p className="label-caps text-[10px] text-ink-faint px-1 mb-1">Recursos</p>
       <p className="px-1 mb-4 text-[12.5px] text-ink-faint leading-relaxed">
         Enlaces de apoyo para este guion: un PDF, una carpeta de Drive, un artículo de referencia.

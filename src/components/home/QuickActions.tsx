@@ -14,16 +14,28 @@ const ACTIONS = [
     description: "Títulos, hook, promesa, capítulos y guion completo para YouTube.",
   },
   {
-    href: "/biblioteca",
+    href: "/carrusel/nuevo",
     index: "03",
+    title: "Nuevo Carrusel",
+    description: "4-10 slides en 4:5 para Instagram, con portada, ritmo y cierre.",
+  },
+  {
+    href: "/biblioteca",
+    index: "04",
     title: "Biblioteca",
     description: "Todos tus guiones: estado, favoritos, duplicar y editar.",
   },
   {
     href: "/conocimiento",
-    index: "04",
+    index: "05",
     title: "Conocimiento",
     description: "Systems thinking, BPM, Value Stream, TOC, arquitectura empresarial.",
+  },
+  {
+    href: "/fuentes",
+    index: "06",
+    title: "Fuentes",
+    description: "Archivo de reels, vídeos y carruseles con su transcripción.",
   },
 ];
 

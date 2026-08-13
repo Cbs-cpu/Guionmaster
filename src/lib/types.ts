@@ -2,7 +2,13 @@
 
 export type Servicio = "odoo" | "entrenadores" | "general";
 
-export type ScriptType = "reel" | "youtube";
+export type ScriptType = "reel" | "youtube" | "carrusel";
+
+export const SCRIPT_TYPE_LABELS: Record<ScriptType, string> = {
+  reel: "Reel",
+  youtube: "YouTube",
+  carrusel: "Carrusel",
+};
 
 export type ScriptStatus = "idea" | "borrador" | "listo" | "grabado" | "publicado";
 
@@ -126,6 +132,65 @@ export interface YoutubeChapter {
   };
 }
 
+// ─── Carrusel de Instagram ──────────────────────────────────────────────────
+// El formato sigue las reglas de diseño de carruseles: 4:5, alternancia de
+// fondos claro/oscuro para dar ritmo al swipe, portada que frena el scroll y
+// último slide con CTA sobre degradado y sin flecha.
+
+export type CarouselSlideKind =
+  | "portada"
+  | "problema"
+  | "solucion"
+  | "claves"
+  | "detalle"
+  | "pasos"
+  | "item"
+  | "cta";
+
+export const CAROUSEL_SLIDE_LABELS: Record<CarouselSlideKind, string> = {
+  portada: "Portada",
+  problema: "Problema",
+  solucion: "Solución",
+  claves: "Claves",
+  detalle: "Detalle",
+  pasos: "Pasos",
+  item: "Punto",
+  cta: "CTA",
+};
+
+export type CarouselBackground = "claro" | "oscuro" | "degradado";
+
+export interface CarouselSlide {
+  id: string;
+  kind: CarouselSlideKind;
+  fondo: CarouselBackground;
+  etiqueta: string;
+  titular: string;
+  cuerpo: string;
+  puntos: string[];
+  notaVisual: string;
+}
+
+export type CarouselSequence = "estandar" | "listicle" | "tutorial" | "comparacion";
+
+export const CAROUSEL_SEQUENCE_LABELS: Record<CarouselSequence, string> = {
+  estandar: "Estándar (portada → problema → solución → claves → pasos → CTA)",
+  listicle: "Lista (X errores, X señales, X herramientas)",
+  tutorial: "Tutorial (contexto → pasos → resultado)",
+  comparacion: "Comparación (opción A vs opción B → veredicto)",
+};
+
+export interface CarruselInputs {
+  servicio: Servicio;
+  publico: string;
+  problema: string;
+  concepto: string;
+  objetivo: string;
+  secuencia: CarouselSequence;
+  numSlides: number;
+  tono: string;
+}
+
 export interface ReelInputs {
   servicio: Servicio;
   publico: string;
@@ -170,9 +235,21 @@ export interface ScriptRecord {
   promesa?: string;
   chapters?: YoutubeChapter[];
 
+  // Carrusel-specific
+  carruselInputs?: CarruselInputs;
+  slides?: CarouselSlide[];
+  caption?: string;
+
   // shared
   notes?: string;
   resources?: ResourceLink[];
+
+  // Entrelazado de documentos: de qué marcos de conocimiento nace este
+  // contenido y con qué otros contenidos forma familia (un vídeo de YouTube,
+  // los reels que salen de él, el carrusel que lo resume). `relatedScriptIds`
+  // se mantiene simétrico desde el store: si A apunta a B, B apunta a A.
+  knowledgeIds?: string[];
+  relatedScriptIds?: string[];
 }
 
 export interface KnowledgeSource {
@@ -215,4 +292,32 @@ export interface KnowledgeCategory {
   // Marca de procedencia: true si el documento se importó (no viene de serie).
   importado?: boolean;
   importadoEn?: string;
+}
+
+// ─── Fuentes de contenido ───────────────────────────────────────────────────
+// Micro base de datos de contenido ya publicado (propio o de referencia) que
+// se archiva con su transcripción para poder buscar por lo que se dijo, no
+// solo por el título. La sección arranca vacía: el archivo se importa.
+
+export type SourcePlatform = "reel" | "youtube" | "instagram";
+
+export const SOURCE_PLATFORM_LABELS: Record<SourcePlatform, string> = {
+  reel: "Reel",
+  youtube: "YouTube",
+  instagram: "Instagram",
+};
+
+export interface ContentSource {
+  id: string;
+  plataforma: SourcePlatform;
+  titulo: string;
+  autor?: string;
+  url?: string;
+  publicadoEn?: string;
+  duracion?: string;
+  transcripcion: string;
+  resumen?: string;
+  temas: string[];
+  notas?: string;
+  anadidoEn: string;
 }

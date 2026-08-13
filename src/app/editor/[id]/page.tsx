@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useStudioStore } from "@/lib/store";
 import { useUiStore } from "@/lib/uiStore";
-import type { ReelBeat, ScriptRecord, YoutubeChapter } from "@/lib/types";
+import type { CarouselSlide, ReelBeat, ScriptRecord, YoutubeChapter } from "@/lib/types";
 import { StructurePane } from "@/components/editor/StructurePane";
 import { GuionPane } from "@/components/editor/GuionPane";
 import { ResourcesPanel } from "@/components/editor/ResourcesPanel";
-import type { ActiveBlock } from "@/components/editor/types";
+import type { ActiveBlock, ViewMode } from "@/components/editor/types";
 import { cn } from "@/lib/utils";
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
 
@@ -56,21 +56,24 @@ export default function EditorPage() {
 function EditorWorkspace({ script }: { script: ScriptRecord }) {
   const updateScript = useStudioStore((s) => s.updateScript);
 
-  const [active, setActive] = useState<ActiveBlock>(
-    script.type === "reel" ? { kind: "beat", key: "hook" } : { kind: "meta" }
-  );
+  const [active, setActive] = useState<ActiveBlock>(() => {
+    if (script.type === "reel") return { kind: "beat", key: "hook" };
+    if (script.type === "carrusel" && script.slides?.length) return { kind: "slide", id: script.slides[0].id };
+    return { kind: "meta" };
+  });
   const [mobileTab, setMobileTab] = useState<"estructura" | "guion" | "recursos">("guion");
-  const [readMode, setReadMode] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("edicion");
   const [estructuraCollapsed, setEstructuraCollapsed] = useState(false);
   const [recursosCollapsed, setRecursosCollapsed] = useState(false);
   const setChromeHidden = useUiStore((s) => s.setChromeHidden);
 
-  // El modo lectura pide pantalla completa: también oculta la navegación
-  // global de la app, no solo los paneles del propio editor.
+  // Los modos lectura y guion piden pantalla completa: también ocultan la
+  // navegación global de la app, no solo los paneles del propio editor.
+  const fullscreen = viewMode !== "edicion";
   useEffect(() => {
-    setChromeHidden(readMode);
+    setChromeHidden(fullscreen);
     return () => setChromeHidden(false);
-  }, [readMode, setChromeHidden]);
+  }, [fullscreen, setChromeHidden]);
 
   function updateBeat(key: ReelBeat["key"], patch: Partial<ReelBeat>) {
     if (!script.beats) return;
@@ -86,6 +89,13 @@ function EditorWorkspace({ script }: { script: ScriptRecord }) {
     });
   }
 
+  function updateSlide(slideId: string, patch: Partial<CarouselSlide>) {
+    if (!script.slides) return;
+    updateScript(script.id, {
+      slides: script.slides.map((s) => (s.id === slideId ? { ...s, ...patch } : s)),
+    });
+  }
+
   function updateMeta(patch: { youtubeHook?: string; promesa?: string }) {
     updateScript(script.id, patch);
   }
@@ -93,8 +103,8 @@ function EditorWorkspace({ script }: { script: ScriptRecord }) {
   const gridColsKey = `${estructuraCollapsed ? 1 : 0}-${recursosCollapsed ? 1 : 0}`;
 
   return (
-    <div className={cn("flex flex-col h-screen", !readMode && "h-[calc(100vh-3.5rem)] lg:h-screen")}>
-      {!readMode && (
+    <div className={cn("flex flex-col h-screen", !fullscreen && "h-[calc(100vh-3.5rem)] lg:h-screen")}>
+      {!fullscreen && (
         <div className="lg:hidden flex border-b border-rule bg-paper-raised">
           {MOBILE_TABS.map((t) => (
             <button
@@ -111,8 +121,8 @@ function EditorWorkspace({ script }: { script: ScriptRecord }) {
         </div>
       )}
 
-      <div className={cn("flex-1 min-h-0 grid", readMode ? "grid-cols-1" : GRID_COLS[gridColsKey])}>
-        {!readMode && (
+      <div className={cn("flex-1 min-h-0 grid", fullscreen ? "grid-cols-1" : GRID_COLS[gridColsKey])}>
+        {!fullscreen && (
           <div className={cn("min-h-0 overflow-y-auto border-r border-rule bg-paper-raised", mobileTab !== "estructura" && "hidden lg:block")}>
             {estructuraCollapsed ? (
               <CollapsedRail label="Estructura" icon={<PanelLeftOpen className="h-4 w-4" />} onClick={() => setEstructuraCollapsed(false)} />
@@ -130,20 +140,21 @@ function EditorWorkspace({ script }: { script: ScriptRecord }) {
           </div>
         )}
 
-        <div className={cn("min-h-0 overflow-y-auto", !readMode && mobileTab !== "guion" && "hidden lg:block")}>
+        <div className={cn("min-h-0 overflow-y-auto", !fullscreen && mobileTab !== "guion" && "hidden lg:block")}>
           <GuionPane
             script={script}
             active={active}
-            readMode={readMode}
-            onToggleReadMode={() => setReadMode((v) => !v)}
+            viewMode={viewMode}
+            onSetViewMode={setViewMode}
             onNavigateActive={setActive}
             onUpdateBeat={updateBeat}
             onUpdateChapter={updateChapter}
             onUpdateMeta={updateMeta}
+            onUpdateSlide={updateSlide}
           />
         </div>
 
-        {!readMode && (
+        {!fullscreen && (
           <div className={cn("min-h-0 overflow-y-auto border-l border-rule bg-paper-raised", mobileTab !== "recursos" && "hidden lg:block")}>
             {recursosCollapsed ? (
               <CollapsedRail label="Recursos" icon={<PanelRightOpen className="h-4 w-4" />} onClick={() => setRecursosCollapsed(false)} />

@@ -126,6 +126,11 @@ body {
   transform: scale(0.98);
 }
 
+/* Fondo de los slides de carrusel que van sobre degradado de marca. */
+.carousel-gradient {
+  background: linear-gradient(165deg, #6f2810 0%, var(--color-accent) 52%, #d98b52 100%);
+}
+
 @media (hover: hover) and (pointer: fine) {
   .hover-lift {
     transition: transform 160ms var(--ease-out-strong), box-shadow 160ms var(--ease-out-strong);

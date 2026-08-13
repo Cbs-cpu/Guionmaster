@@ -1,5 +1,5 @@
 import { makeId } from "./utils";
-import type { HookType, ReelBeat, ScriptRecord, YoutubeChapter } from "./types";
+import type { CarouselSlide, HookType, ReelBeat, ScriptRecord, YoutubeChapter } from "./types";
 
 // Contenido de ejemplo precargado la primera vez que se abre la app en un
 // navegador nuevo (biblioteca vacía). Escrito a mano siguiendo la skill
@@ -25,6 +25,10 @@ function chapters(list: Array<Omit<YoutubeChapter, "id">>): YoutubeChapter[] {
   return list.map((c) => ({ ...c, id: makeId("chapter") }));
 }
 
+function carouselSlides(list: Array<Omit<CarouselSlide, "id">>): CarouselSlide[] {
+  return list.map((s) => ({ ...s, id: makeId("slide") }));
+}
+
 const YOUTUBE_TOC: ScriptRecord = {
   id: "seed-youtube-toc",
   type: "youtube",
@@ -35,6 +39,8 @@ const YOUTUBE_TOC: ScriptRecord = {
   favorite: true,
   createdAt: daysAgo(6),
   updatedAt: daysAgo(1),
+  knowledgeIds: ["toc"],
+  relatedScriptIds: ["seed-reel-cuello-botella", "seed-carrusel-toc"],
   youtubeInputs: {
     tema: "Theory of Constraints: por qué el rendimiento de una empresa lo marca un único punto",
     publico: "Dueños y gerentes de pymes que sienten que 'todo va lento' y creen que la solución es contratar más gente",
@@ -139,6 +145,8 @@ interface SeedReelSpec {
   concepto: string;
   hookTipo: HookType;
   beats: Array<Omit<ReelBeat, "id">>;
+  knowledgeIds?: string[];
+  relatedScriptIds?: string[];
 }
 
 function buildReel(spec: SeedReelSpec, createdDaysAgo: number): ScriptRecord {
@@ -166,6 +174,8 @@ function buildReel(spec: SeedReelSpec, createdDaysAgo: number): ScriptRecord {
     hooks: [{ id: selectedHookId, tipo: spec.hookTipo, texto: spec.beats[0].textoHablado }],
     selectedHookId,
     beats: reelBeats(spec.beats),
+    knowledgeIds: spec.knowledgeIds ?? [],
+    relatedScriptIds: spec.relatedScriptIds ?? [],
   };
 }
 
@@ -183,6 +193,7 @@ const REEL_SILOS = buildReel(
     objetivo: "Que entiendan que el problema es de arquitectura de datos, no de disciplina del equipo",
     concepto: "silos de información y punto único de verdad",
     hookTipo: "problema",
+    knowledgeIds: ["information-silos"],
     beats: [
       { key: "hook", textoHablado: "Tu CRM dice una cosa. Tu Excel de ventas dice otra. Y facturación tiene una tercera versión del mismo cliente.", tiempoAprox: "0-4s", visualSugerido: "Primer plano a cámara, cara seria, corte rápido al empezar.", textoPantalla: "3 versiones del mismo cliente" },
       { key: "problema", textoHablado: "No es un caso raro. Es lo normal en empresas que han ido añadiendo herramientas con los años sin que se hablen entre ellas.", tiempoAprox: "4-15s", visualSugerido: "Cortes rápidos mostrando pantallas genéricas de hoja de cálculo y CRM.", textoPantalla: "Cada equipo, su versión" },
@@ -237,9 +248,11 @@ const REEL_CUELLO_BOTELLA = buildReel(
     objetivo: "Que antes de contratar, busquen el cuello de botella real",
     concepto: "teoría de las restricciones aplicada a la contratación",
     hookTipo: "contrarian",
+    knowledgeIds: ["toc"],
+    relatedScriptIds: ["seed-youtube-toc", "seed-carrusel-toc"],
     beats: [
-      { key: "hook", textoHablado: "Si tu empresa va lenta, lo último que deberías hacer es contratar a alguien más. En serio.", tiempoAprox: "0-3s", visualSugerido: "A cámara, tono directo, sin rodeos.", textoPantalla: "No contrates todavía" },
-      { key: "problema", textoHablado: "La reacción automática cuando algo se atasca es 'necesitamos más manos'. Pero casi nunca el problema es la cantidad de gente.", tiempoAprox: "3-12s", visualSugerido: "Cara a cámara.", textoPantalla: "" },
+      { key: "hook", textoHablado: "Si tu empresa va lenta, **lo último que deberías hacer es contratar a alguien más**. [pausa] En serio. [sub: No contrates todavía]", tiempoAprox: "0-3s", visualSugerido: "A cámara, tono directo, sin rodeos.", textoPantalla: "No contrates todavía" },
+      { key: "problema", textoHablado: "La reacción automática cuando algo se atasca es *necesitamos más manos*. [corte] Pero casi nunca el problema es la cantidad de gente.", tiempoAprox: "3-12s", visualSugerido: "Cara a cámara.", textoPantalla: "" },
       { key: "consecuencia", textoHablado: "Añades una persona más al equipo, y seis meses después sigues igual de atascado — solo que ahora con una nómina más.", tiempoAprox: "12-20s", visualSugerido: "Gesto de resignación, tono irónico controlado.", textoPantalla: "Mismo atasco, más nómina" },
       { key: "insight", textoHablado: "En cualquier empresa hay un único punto que determina cuánto puede producir todo el sistema. Mejorar cualquier otro punto no cambia nada.", tiempoAprox: "20-30s", visualSugerido: "Texto en pantalla con la idea clave.", textoPantalla: "Un único punto lo decide todo" },
       { key: "sistema", textoHablado: "Antes de contratar, encuentra ese punto: dónde se acumula el trabajo, dónde tu equipo espera a que otro departamento le responda.", tiempoAprox: "30-38s", visualSugerido: "Diagrama simple en pizarra señalando un punto concreto.", textoPantalla: "Encuentra el punto real" },
@@ -459,6 +472,8 @@ const YOUTUBE_BPM: ScriptRecord = {
   favorite: true,
   createdAt: daysAgo(1),
   updatedAt: daysAgo(0),
+  knowledgeIds: ["bpm"],
+  relatedScriptIds: ["seed-reel-bpm-configurar-antes", "seed-reel-bpm-medir-despues"],
   youtubeInputs: {
     tema: "Business Process Management: por qué hay que mapear el proceso antes de configurar cualquier sistema",
     publico: "Dueños y gerentes de pymes a punto de implantar un ERP o digitalizar su operación",
@@ -564,6 +579,8 @@ const REEL_BPM_CONFIGURAR_ANTES = buildReel(
     objetivo: "Que mapeen el proceso antes de configurar ninguna herramienta",
     concepto: "AS-IS antes de configurar cualquier sistema",
     hookTipo: "error_comun",
+    knowledgeIds: ["bpm"],
+    relatedScriptIds: ["seed-youtube-bpm"],
     beats: [
       { key: "hook", textoHablado: "El error más caro que veo antes de implantar cualquier sistema: configurarlo antes de entender el proceso que va a ejecutar.", tiempoAprox: "0-5s", visualSugerido: "A cámara, tono de advertencia.", textoPantalla: "El error más caro" },
       { key: "problema", textoHablado: "Una empresa decide digitalizarse y empieza directamente a configurar módulos — ventas por un lado, inventario por otro — sin haberse sentado a mapear cómo funciona realmente el negocio.", tiempoAprox: "5-15s", visualSugerido: "Cortes rápidos mostrando pantallas genéricas de configuración.", textoPantalla: "" },
@@ -807,6 +824,8 @@ const REEL_BPM_MEDIR_DESPUES = buildReel(
     objetivo: "Que definan qué van a medir antes de dar el proyecto por terminado",
     concepto: "monitorización continua tras la implantación",
     hookTipo: "resultado",
+    knowledgeIds: ["bpm"],
+    relatedScriptIds: ["seed-youtube-bpm"],
     beats: [
       { key: "hook", textoHablado: "El día que se instala el sistema no es el final del proyecto. Es el primer día en el que por fin puedes medir si el proceso funciona.", tiempoAprox: "0-7s", visualSugerido: "A cámara, tono de resultado.", textoPantalla: "No es el final, es el principio" },
       { key: "problema", textoHablado: "Muchas empresas tratan la implantación como un proyecto que termina cuando el software ya está funcionando.", tiempoAprox: "7-16s", visualSugerido: "Cara a cámara.", textoPantalla: "" },
@@ -820,7 +839,95 @@ const REEL_BPM_MEDIR_DESPUES = buildReel(
   1
 );
 
+// Un carrusel que resume el vídeo de Theory of Constraints: mismo marco de
+// conocimiento, mismo mensaje, otro formato. Sirve además de ejemplo de cómo
+// se entrelazan los documentos entre sí.
+const CARRUSEL_TOC: ScriptRecord = {
+  id: "seed-carrusel-toc",
+  type: "carrusel",
+  title: "Las 5 señales de que tienes un cuello de botella",
+  service: "odoo",
+  concepts: ["Cuellos de botella", "Sistema"],
+  status: "borrador",
+  favorite: false,
+  createdAt: daysAgo(3),
+  updatedAt: daysAgo(2),
+  knowledgeIds: ["toc"],
+  relatedScriptIds: ["seed-youtube-toc", "seed-reel-cuello-botella"],
+  caption:
+    "Cuando una empresa va lenta, la reacción normal es pedirle más a todo el mundo. Pero un sistema no va al ritmo de la suma de sus partes: va al ritmo de su punto más lento. Mientras no encuentres ese punto, cada mejora en el resto solo acumula más trabajo delante de él. Guarda esto y revísalo la próxima vez que alguien proponga contratar para ir más rápido.",
+  slides: carouselSlides([
+    {
+      kind: "portada",
+      fondo: "claro",
+      etiqueta: "",
+      titular: "Tu empresa no va lenta. Va al ritmo de su punto más lento.",
+      cuerpo: "5 señales de que tienes un cuello de botella y no lo has encontrado.",
+      puntos: [],
+      notaVisual: "Cara a cámara o foto de un embudo real. Titular muy grande.",
+    },
+    {
+      kind: "problema",
+      fondo: "oscuro",
+      etiqueta: "El problema",
+      titular: "Mejorar todo a la vez no mejora nada",
+      cuerpo:
+        "Si aceleras una parte que no es la restricción, lo único que consigues es acumular más trabajo delante de ella.",
+      puntos: [],
+      notaVisual: "Diagrama de tubería con un estrechamiento marcado en rojo.",
+    },
+    {
+      kind: "claves",
+      fondo: "claro",
+      etiqueta: "Las 5 señales",
+      titular: "Dónde mirar",
+      cuerpo: "",
+      puntos: [
+        "Siempre hay trabajo esperando en el mismo sitio.",
+        "Una persona concreta tiene que validarlo todo.",
+        "Los plazos que fallan fallan siempre en la misma fase.",
+        "El resto del equipo está esperando, no saturado.",
+        "Contratar en otras áreas no cambió nada.",
+      ],
+      notaVisual: "Lista limpia sobre fondo claro, sin iconos decorativos.",
+    },
+    {
+      kind: "solucion",
+      fondo: "oscuro",
+      etiqueta: "Qué hacer",
+      titular: "Primero encuéntralo. Luego protégelo.",
+      cuerpo:
+        "La restricción marca el ritmo de todo el sistema. Una hora perdida ahí es una hora perdida en la empresa entera.",
+      puntos: [],
+      notaVisual: "Cita grande centrada.",
+    },
+    {
+      kind: "pasos",
+      fondo: "claro",
+      etiqueta: "Cómo empezar",
+      titular: "Tres pasos esta semana",
+      cuerpo: "",
+      puntos: [
+        "Dibuja el recorrido completo de un pedido.",
+        "Marca dónde se acumula trabajo esperando.",
+        "Quítale a ese punto todo lo que no sea su tarea.",
+      ],
+      notaVisual: "Números grandes, poco texto.",
+    },
+    {
+      kind: "cta",
+      fondo: "degradado",
+      etiqueta: "",
+      titular: "¿Ya sabes cuál es el tuyo?",
+      cuerpo: "Guarda esto y revísalo antes de la próxima contratación.",
+      puntos: [],
+      notaVisual: "Cierre limpio, sin flecha de swipe.",
+    },
+  ]),
+};
+
 export const SEED_SCRIPTS: ScriptRecord[] = [
+  CARRUSEL_TOC,
   YOUTUBE_TOC,
   REEL_ERRORES,
   REEL_ESPERAS,
