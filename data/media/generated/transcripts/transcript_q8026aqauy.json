@@ -1,0 +1,1461 @@
+{
+  "id": "transcript_q8026aqauy",
+  "fuente": "0601.mp4",
+  "creadaEn": "2026-08-19T14:50:36.925Z",
+  "backend": "groq",
+  "idioma": "English",
+  "duracion": 157.84975232,
+  "texto": " Hello, welcome to our company. I'm Jorge Marín, the head of IT. Let's start the interview for the software tester job. What is your full name? Hello George, nice to meet you. My full name is Samuel Mercer, but you can call me Sam. Great Sam, how are you? I am 29 years old. Ok, and what is your email and phone number? My email is sammerk at uknet dot t and my phone number is 03069 990232 Perfect, where do you drive? I live at 14 Cloverfold Avenue, South Zantum Good. Now, let's talk about your education. What did you study? I finished secondary school and vocational training. I also have software testing certification. Excellent. What language do you speak? My native language is Spanish but I also speak French and advanced English Very good Do you have work experience Yes I work as a software developer at Silvi video games for two years and in IT support at Thomson Medical Equipment for three years. That is impressive. Who do you describe your personality and skills? I am vicious, responsible and organized. I I work well in a team and motivated others for skills I know C++, Java and Excel. You have a great profile. Do you have any question for me about the job? Yes please. What are the working hours? The hours are Monday to Friday from 9 am to 5 pm. That sounds good. And what is the starting salary? The starting salary is 28,500 per year. Great! What about holiday leave and paid sick leave? You have 20 years of holiday leave per year and 10 of paid sick leave. Thank you very much, George. Everything is very clear. Have a nice day too. Bye!",
+  "palabras": [
+    {
+      "texto": "Hello,",
+      "inicio": 0.52,
+      "fin": 1.14
+    },
+    {
+      "texto": "welcome",
+      "inicio": 1.14,
+      "fin": 1.24
+    },
+    {
+      "texto": "to",
+      "inicio": 1.24,
+      "fin": 1.78
+    },
+    {
+      "texto": "our",
+      "inicio": 1.78,
+      "fin": 1.98
+    },
+    {
+      "texto": "company.",
+      "inicio": 1.98,
+      "fin": 2.82
+    },
+    {
+      "texto": "I'm",
+      "inicio": 2.82,
+      "fin": 2.96
+    },
+    {
+      "texto": "Jorge",
+      "inicio": 2.96,
+      "fin": 3.28
+    },
+    {
+      "texto": "Marín,",
+      "inicio": 3.28,
+      "fin": 4.06
+    },
+    {
+      "texto": "the",
+      "inicio": 4.06,
+      "fin": 4.18
+    },
+    {
+      "texto": "head",
+      "inicio": 4.18,
+      "fin": 4.46
+    },
+    {
+      "texto": "of",
+      "inicio": 4.46,
+      "fin": 5.38
+    },
+    {
+      "texto": "IT.",
+      "inicio": 5.38,
+      "fin": 5.68
+    },
+    {
+      "texto": "Let's",
+      "inicio": 5.68,
+      "fin": 6.82
+    },
+    {
+      "texto": "start",
+      "inicio": 6.82,
+      "fin": 7.16
+    },
+    {
+      "texto": "the",
+      "inicio": 7.16,
+      "fin": 7.64
+    },
+    {
+      "texto": "interview",
+      "inicio": 7.64,
+      "fin": 8.04
+    },
+    {
+      "texto": "for",
+      "inicio": 8.04,
+      "fin": 8.54
+    },
+    {
+      "texto": "the",
+      "inicio": 8.54,
+      "fin": 8.72
+    },
+    {
+      "texto": "software",
+      "inicio": 8.72,
+      "fin": 9.12
+    },
+    {
+      "texto": "tester",
+      "inicio": 9.12,
+      "fin": 9.72
+    },
+    {
+      "texto": "job.",
+      "inicio": 9.72,
+      "fin": 11.16
+    },
+    {
+      "texto": "What",
+      "inicio": 11.16,
+      "fin": 11.44
+    },
+    {
+      "texto": "is",
+      "inicio": 11.44,
+      "fin": 11.64
+    },
+    {
+      "texto": "your",
+      "inicio": 11.64,
+      "fin": 12.24
+    },
+    {
+      "texto": "full",
+      "inicio": 12.24,
+      "fin": 12.5
+    },
+    {
+      "texto": "name?",
+      "inicio": 12.5,
+      "fin": 12.7
+    },
+    {
+      "texto": "Hello",
+      "inicio": 13.98,
+      "fin": 14.24
+    },
+    {
+      "texto": "George,",
+      "inicio": 14.24,
+      "fin": 14.88
+    },
+    {
+      "texto": "nice",
+      "inicio": 14.88,
+      "fin": 15.02
+    },
+    {
+      "texto": "to",
+      "inicio": 15.02,
+      "fin": 15.18
+    },
+    {
+      "texto": "meet",
+      "inicio": 15.18,
+      "fin": 15.38
+    },
+    {
+      "texto": "you.",
+      "inicio": 15.38,
+      "fin": 15.86
+    },
+    {
+      "texto": "My",
+      "inicio": 15.86,
+      "fin": 16
+    },
+    {
+      "texto": "full",
+      "inicio": 16,
+      "fin": 16.22
+    },
+    {
+      "texto": "name",
+      "inicio": 16.22,
+      "fin": 16.46
+    },
+    {
+      "texto": "is",
+      "inicio": 16.46,
+      "fin": 16.82
+    },
+    {
+      "texto": "Samuel",
+      "inicio": 16.82,
+      "fin": 17.14
+    },
+    {
+      "texto": "Mercer,",
+      "inicio": 17.14,
+      "fin": 17.68
+    },
+    {
+      "texto": "but",
+      "inicio": 17.68,
+      "fin": 18.2
+    },
+    {
+      "texto": "you",
+      "inicio": 18.2,
+      "fin": 18.38
+    },
+    {
+      "texto": "can",
+      "inicio": 18.38,
+      "fin": 18.52
+    },
+    {
+      "texto": "call",
+      "inicio": 18.52,
+      "fin": 18.72
+    },
+    {
+      "texto": "me",
+      "inicio": 18.72,
+      "fin": 18.92
+    },
+    {
+      "texto": "Sam.",
+      "inicio": 18.92,
+      "fin": 19.18
+    },
+    {
+      "texto": "Great",
+      "inicio": 20.54,
+      "fin": 20.94
+    },
+    {
+      "texto": "Sam,",
+      "inicio": 20.94,
+      "fin": 21.74
+    },
+    {
+      "texto": "how",
+      "inicio": 21.74,
+      "fin": 22.08
+    },
+    {
+      "texto": "are",
+      "inicio": 22.08,
+      "fin": 22.26
+    },
+    {
+      "texto": "you?",
+      "inicio": 22.26,
+      "fin": 23.06
+    },
+    {
+      "texto": "I",
+      "inicio": 22.5,
+      "fin": 23.84
+    },
+    {
+      "texto": "am",
+      "inicio": 23.84,
+      "fin": 24.2
+    },
+    {
+      "texto": "29",
+      "inicio": 24.2,
+      "fin": 24.9
+    },
+    {
+      "texto": "years",
+      "inicio": 24.9,
+      "fin": 25.4
+    },
+    {
+      "texto": "old.",
+      "inicio": 25.4,
+      "fin": 26.2
+    },
+    {
+      "texto": "Ok,",
+      "inicio": 27.06,
+      "fin": 27.76
+    },
+    {
+      "texto": "and",
+      "inicio": 27.76,
+      "fin": 27.96
+    },
+    {
+      "texto": "what",
+      "inicio": 27.96,
+      "fin": 28.42
+    },
+    {
+      "texto": "is",
+      "inicio": 28.42,
+      "fin": 28.52
+    },
+    {
+      "texto": "your",
+      "inicio": 28.52,
+      "fin": 28.76
+    },
+    {
+      "texto": "email",
+      "inicio": 28.76,
+      "fin": 29.2
+    },
+    {
+      "texto": "and",
+      "inicio": 29.2,
+      "fin": 29.76
+    },
+    {
+      "texto": "phone",
+      "inicio": 29.76,
+      "fin": 30.24
+    },
+    {
+      "texto": "number?",
+      "inicio": 30.24,
+      "fin": 31.08
+    },
+    {
+      "texto": "My",
+      "inicio": 31.38,
+      "fin": 31.74
+    },
+    {
+      "texto": "email",
+      "inicio": 31.74,
+      "fin": 32.28
+    },
+    {
+      "texto": "is",
+      "inicio": 32.28,
+      "fin": 32.78
+    },
+    {
+      "texto": "sammerk",
+      "inicio": 32.78,
+      "fin": 33.54
+    },
+    {
+      "texto": "at",
+      "inicio": 33.54,
+      "fin": 34.24
+    },
+    {
+      "texto": "uknet",
+      "inicio": 34.24,
+      "fin": 35.28
+    },
+    {
+      "texto": "dot",
+      "inicio": 35.28,
+      "fin": 35.68
+    },
+    {
+      "texto": "t",
+      "inicio": 35.68,
+      "fin": 35.96
+    },
+    {
+      "texto": "and",
+      "inicio": 35.96,
+      "fin": 36.46
+    },
+    {
+      "texto": "my",
+      "inicio": 36.46,
+      "fin": 36.7
+    },
+    {
+      "texto": "phone",
+      "inicio": 36.7,
+      "fin": 37.06
+    },
+    {
+      "texto": "number",
+      "inicio": 37.06,
+      "fin": 37.38
+    },
+    {
+      "texto": "is",
+      "inicio": 37.38,
+      "fin": 37.7
+    },
+    {
+      "texto": "03069",
+      "inicio": 37.7,
+      "fin": 40.4
+    },
+    {
+      "texto": "990232",
+      "inicio": 40.4,
+      "fin": 44.68
+    },
+    {
+      "texto": "Perfect,",
+      "inicio": 45.76,
+      "fin": 46.48
+    },
+    {
+      "texto": "where",
+      "inicio": 46.48,
+      "fin": 46.9
+    },
+    {
+      "texto": "do",
+      "inicio": 46.9,
+      "fin": 47.04
+    },
+    {
+      "texto": "you",
+      "inicio": 47.04,
+      "fin": 47.22
+    },
+    {
+      "texto": "drive?",
+      "inicio": 47.22,
+      "fin": 47.78
+    },
+    {
+      "texto": "I",
+      "inicio": 49.08,
+      "fin": 49.46
+    },
+    {
+      "texto": "live",
+      "inicio": 49.46,
+      "fin": 49.84
+    },
+    {
+      "texto": "at",
+      "inicio": 49.84,
+      "fin": 50.3
+    },
+    {
+      "texto": "14",
+      "inicio": 50.3,
+      "fin": 51.26
+    },
+    {
+      "texto": "Cloverfold",
+      "inicio": 51.26,
+      "fin": 51.98
+    },
+    {
+      "texto": "Avenue,",
+      "inicio": 51.98,
+      "fin": 52.98
+    },
+    {
+      "texto": "South",
+      "inicio": 52.98,
+      "fin": 53.42
+    },
+    {
+      "texto": "Zantum",
+      "inicio": 53.42,
+      "fin": 54
+    },
+    {
+      "texto": "Good.",
+      "inicio": 54.34,
+      "fin": 55.08
+    },
+    {
+      "texto": "Now,",
+      "inicio": 55.08,
+      "fin": 55.36
+    },
+    {
+      "texto": "let's",
+      "inicio": 55.36,
+      "fin": 55.82
+    },
+    {
+      "texto": "talk",
+      "inicio": 55.82,
+      "fin": 56.14
+    },
+    {
+      "texto": "about",
+      "inicio": 56.14,
+      "fin": 56.52
+    },
+    {
+      "texto": "your",
+      "inicio": 56.52,
+      "fin": 56.84
+    },
+    {
+      "texto": "education.",
+      "inicio": 56.84,
+      "fin": 57.78
+    },
+    {
+      "texto": "What",
+      "inicio": 57.78,
+      "fin": 57.9
+    },
+    {
+      "texto": "did",
+      "inicio": 57.9,
+      "fin": 58.08
+    },
+    {
+      "texto": "you",
+      "inicio": 58.08,
+      "fin": 58.32
+    },
+    {
+      "texto": "study?",
+      "inicio": 58.32,
+      "fin": 59.18
+    },
+    {
+      "texto": "I",
+      "inicio": 60.08,
+      "fin": 60.24
+    },
+    {
+      "texto": "finished",
+      "inicio": 60.24,
+      "fin": 60.6
+    },
+    {
+      "texto": "secondary",
+      "inicio": 60.6,
+      "fin": 61.16
+    },
+    {
+      "texto": "school",
+      "inicio": 61.16,
+      "fin": 61.8
+    },
+    {
+      "texto": "and",
+      "inicio": 61.8,
+      "fin": 62.26
+    },
+    {
+      "texto": "vocational",
+      "inicio": 62.26,
+      "fin": 62.7
+    },
+    {
+      "texto": "training.",
+      "inicio": 62.7,
+      "fin": 63.58
+    },
+    {
+      "texto": "I",
+      "inicio": 63.58,
+      "fin": 63.68
+    },
+    {
+      "texto": "also",
+      "inicio": 63.68,
+      "fin": 64.02
+    },
+    {
+      "texto": "have",
+      "inicio": 64.02,
+      "fin": 64.38
+    },
+    {
+      "texto": "software",
+      "inicio": 64.38,
+      "fin": 64.94
+    },
+    {
+      "texto": "testing",
+      "inicio": 64.94,
+      "fin": 65.4
+    },
+    {
+      "texto": "certification.",
+      "inicio": 65.4,
+      "fin": 66.08
+    },
+    {
+      "texto": "Excellent.",
+      "inicio": 67.12,
+      "fin": 68.02
+    },
+    {
+      "texto": "What",
+      "inicio": 68.02,
+      "fin": 68.32
+    },
+    {
+      "texto": "language",
+      "inicio": 68.32,
+      "fin": 68.86
+    },
+    {
+      "texto": "do",
+      "inicio": 68.86,
+      "fin": 69.12
+    },
+    {
+      "texto": "you",
+      "inicio": 69.12,
+      "fin": 69.24
+    },
+    {
+      "texto": "speak?",
+      "inicio": 69.24,
+      "fin": 70.06
+    },
+    {
+      "texto": "My",
+      "inicio": 70.34,
+      "fin": 70.54
+    },
+    {
+      "texto": "native",
+      "inicio": 70.54,
+      "fin": 71.08
+    },
+    {
+      "texto": "language",
+      "inicio": 71.08,
+      "fin": 71.54
+    },
+    {
+      "texto": "is",
+      "inicio": 71.54,
+      "fin": 71.82
+    },
+    {
+      "texto": "Spanish,",
+      "inicio": 71.82,
+      "fin": 72.38
+    },
+    {
+      "texto": "but",
+      "inicio": 72.38,
+      "fin": 72.72
+    },
+    {
+      "texto": "I",
+      "inicio": 72.72,
+      "fin": 73
+    },
+    {
+      "texto": "also",
+      "inicio": 73,
+      "fin": 73.46
+    },
+    {
+      "texto": "speak",
+      "inicio": 73.46,
+      "fin": 73.94
+    },
+    {
+      "texto": "French",
+      "inicio": 73.94,
+      "fin": 74.44
+    },
+    {
+      "texto": "and",
+      "inicio": 74.44,
+      "fin": 74.88
+    },
+    {
+      "texto": "advanced",
+      "inicio": 74.88,
+      "fin": 75.7
+    },
+    {
+      "texto": "English.",
+      "inicio": 75.7,
+      "fin": 76.28
+    },
+    {
+      "texto": "Very",
+      "inicio": 77.22,
+      "fin": 77.44
+    },
+    {
+      "texto": "good.",
+      "inicio": 77.44,
+      "fin": 78.2
+    },
+    {
+      "texto": "Do",
+      "inicio": 78.2,
+      "fin": 78.3
+    },
+    {
+      "texto": "you",
+      "inicio": 78.3,
+      "fin": 78.44
+    },
+    {
+      "texto": "have",
+      "inicio": 78.44,
+      "fin": 78.68
+    },
+    {
+      "texto": "work",
+      "inicio": 78.68,
+      "fin": 79.04
+    },
+    {
+      "texto": "experience?",
+      "inicio": 78.792,
+      "fin": 79.832
+    },
+    {
+      "texto": "Yes,",
+      "inicio": 79.832,
+      "fin": 80.212006
+    },
+    {
+      "texto": "I",
+      "inicio": 80.212006,
+      "fin": 80.512
+    },
+    {
+      "texto": "work",
+      "inicio": 80.512,
+      "fin": 80.852005
+    },
+    {
+      "texto": "as",
+      "inicio": 80.852005,
+      "fin": 81.192
+    },
+    {
+      "texto": "a",
+      "inicio": 81.192,
+      "fin": 81.43201
+    },
+    {
+      "texto": "software",
+      "inicio": 81.212006,
+      "fin": 81.772
+    },
+    {
+      "texto": "developer",
+      "inicio": 81.772,
+      "fin": 82.452
+    },
+    {
+      "texto": "at",
+      "inicio": 82.452,
+      "fin": 82.792
+    },
+    {
+      "texto": "Silvi,",
+      "inicio": 82.792,
+      "fin": 83.712006
+    },
+    {
+      "texto": "video",
+      "inicio": 83.712006,
+      "fin": 84.152
+    },
+    {
+      "texto": "games",
+      "inicio": 84.152,
+      "fin": 84.43201
+    },
+    {
+      "texto": "for",
+      "inicio": 84.43201,
+      "fin": 84.772
+    },
+    {
+      "texto": "two",
+      "inicio": 84.772,
+      "fin": 85.052
+    },
+    {
+      "texto": "years",
+      "inicio": 85.052,
+      "fin": 85.592
+    },
+    {
+      "texto": "and",
+      "inicio": 85.592,
+      "fin": 86.412
+    },
+    {
+      "texto": "in",
+      "inicio": 86.412,
+      "fin": 87.07201
+    },
+    {
+      "texto": "IT",
+      "inicio": 87.07201,
+      "fin": 87.672005
+    },
+    {
+      "texto": "support",
+      "inicio": 87.672005,
+      "fin": 88.372
+    },
+    {
+      "texto": "at",
+      "inicio": 88.372,
+      "fin": 89.412
+    },
+    {
+      "texto": "Thomson",
+      "inicio": 89.252,
+      "fin": 90.07201
+    },
+    {
+      "texto": "Medical",
+      "inicio": 90.07201,
+      "fin": 90.732
+    },
+    {
+      "texto": "Equipment",
+      "inicio": 90.732,
+      "fin": 91.492004
+    },
+    {
+      "texto": "for",
+      "inicio": 91.492004,
+      "fin": 91.692
+    },
+    {
+      "texto": "three",
+      "inicio": 91.692,
+      "fin": 92.012
+    },
+    {
+      "texto": "years.",
+      "inicio": 92.012,
+      "fin": 93.372
+    },
+    {
+      "texto": "That",
+      "inicio": 93.372,
+      "fin": 93.512
+    },
+    {
+      "texto": "is",
+      "inicio": 93.512,
+      "fin": 93.752
+    },
+    {
+      "texto": "impressive.",
+      "inicio": 93.752,
+      "fin": 95.652
+    },
+    {
+      "texto": "Who",
+      "inicio": 95.652,
+      "fin": 95.752
+    },
+    {
+      "texto": "do",
+      "inicio": 95.752,
+      "fin": 95.892
+    },
+    {
+      "texto": "you",
+      "inicio": 95.892,
+      "fin": 96.172005
+    },
+    {
+      "texto": "describe",
+      "inicio": 95.612,
+      "fin": 97.052
+    },
+    {
+      "texto": "your",
+      "inicio": 97.052,
+      "fin": 97.512
+    },
+    {
+      "texto": "personality",
+      "inicio": 97.512,
+      "fin": 98.232
+    },
+    {
+      "texto": "and",
+      "inicio": 98.232,
+      "fin": 98.692
+    },
+    {
+      "texto": "skills?",
+      "inicio": 98.692,
+      "fin": 99.412
+    },
+    {
+      "texto": "I",
+      "inicio": 99.412,
+      "fin": 99.832
+    },
+    {
+      "texto": "am",
+      "inicio": 99.832,
+      "fin": 100.052
+    },
+    {
+      "texto": "vicious,",
+      "inicio": 100.052,
+      "fin": 101.012
+    },
+    {
+      "texto": "responsible",
+      "inicio": 101.012,
+      "fin": 101.852005
+    },
+    {
+      "texto": "and",
+      "inicio": 101.852005,
+      "fin": 102.57201
+    },
+    {
+      "texto": "organized.",
+      "inicio": 102.57201,
+      "fin": 103.692
+    },
+    {
+      "texto": "I",
+      "inicio": 103.692,
+      "fin": 104.032005
+    },
+    {
+      "texto": "I",
+      "inicio": 103.652,
+      "fin": 104.132
+    },
+    {
+      "texto": "work",
+      "inicio": 104.132,
+      "fin": 104.832
+    },
+    {
+      "texto": "well",
+      "inicio": 104.832,
+      "fin": 105.532005
+    },
+    {
+      "texto": "in",
+      "inicio": 105.532005,
+      "fin": 105.872
+    },
+    {
+      "texto": "a",
+      "inicio": 105.872,
+      "fin": 106.07201
+    },
+    {
+      "texto": "team",
+      "inicio": 106.07201,
+      "fin": 106.29201
+    },
+    {
+      "texto": "and",
+      "inicio": 106.29201,
+      "fin": 106.692
+    },
+    {
+      "texto": "motivated",
+      "inicio": 106.692,
+      "fin": 107.392
+    },
+    {
+      "texto": "others",
+      "inicio": 107.392,
+      "fin": 107.992004
+    },
+    {
+      "texto": "for",
+      "inicio": 107.992004,
+      "fin": 108.552
+    },
+    {
+      "texto": "skills",
+      "inicio": 108.552,
+      "fin": 108.93201
+    },
+    {
+      "texto": "I",
+      "inicio": 108.93201,
+      "fin": 109.172005
+    },
+    {
+      "texto": "know",
+      "inicio": 109.172005,
+      "fin": 109.312004
+    },
+    {
+      "texto": "C++,",
+      "inicio": 109.312004,
+      "fin": 110.192
+    },
+    {
+      "texto": "Java",
+      "inicio": 110.192,
+      "fin": 110.512
+    },
+    {
+      "texto": "and",
+      "inicio": 110.512,
+      "fin": 110.79201
+    },
+    {
+      "texto": "Excel.",
+      "inicio": 110.79201,
+      "fin": 111.352005
+    },
+    {
+      "texto": "You",
+      "inicio": 111.352005,
+      "fin": 111.472
+    },
+    {
+      "texto": "have",
+      "inicio": 111.472,
+      "fin": 111.752
+    },
+    {
+      "texto": "a",
+      "inicio": 111.752,
+      "fin": 112.012
+    },
+    {
+      "texto": "great",
+      "inicio": 112.012,
+      "fin": 112.192
+    },
+    {
+      "texto": "profile.",
+      "inicio": 112.192,
+      "fin": 113.212006
+    },
+    {
+      "texto": "Do",
+      "inicio": 113.212006,
+      "fin": 113.65201
+    },
+    {
+      "texto": "you",
+      "inicio": 113.65201,
+      "fin": 113.79201
+    },
+    {
+      "texto": "have",
+      "inicio": 113.79201,
+      "fin": 114.052
+    },
+    {
+      "texto": "any",
+      "inicio": 114.052,
+      "fin": 114.392
+    },
+    {
+      "texto": "question",
+      "inicio": 114.392,
+      "fin": 114.692
+    },
+    {
+      "texto": "for",
+      "inicio": 114.692,
+      "fin": 115.212006
+    },
+    {
+      "texto": "me",
+      "inicio": 115.212006,
+      "fin": 115.632
+    },
+    {
+      "texto": "about",
+      "inicio": 115.632,
+      "fin": 116.092
+    },
+    {
+      "texto": "the",
+      "inicio": 116.092,
+      "fin": 116.332
+    },
+    {
+      "texto": "job?",
+      "inicio": 116.332,
+      "fin": 116.552
+    },
+    {
+      "texto": "Yes",
+      "inicio": 116.912,
+      "fin": 117.212006
+    },
+    {
+      "texto": "please.",
+      "inicio": 117.212006,
+      "fin": 117.672005
+    },
+    {
+      "texto": "What",
+      "inicio": 117.672005,
+      "fin": 117.972
+    },
+    {
+      "texto": "are",
+      "inicio": 117.972,
+      "fin": 118.15201
+    },
+    {
+      "texto": "the",
+      "inicio": 118.15201,
+      "fin": 118.512
+    },
+    {
+      "texto": "working",
+      "inicio": 118.512,
+      "fin": 118.912
+    },
+    {
+      "texto": "hours?",
+      "inicio": 118.912,
+      "fin": 119.57201
+    },
+    {
+      "texto": "The",
+      "inicio": 120.112,
+      "fin": 120.252
+    },
+    {
+      "texto": "hours",
+      "inicio": 120.252,
+      "fin": 120.612
+    },
+    {
+      "texto": "are",
+      "inicio": 120.612,
+      "fin": 121.552
+    },
+    {
+      "texto": "Monday",
+      "inicio": 121.552,
+      "fin": 122.032
+    },
+    {
+      "texto": "to",
+      "inicio": 122.032,
+      "fin": 122.472
+    },
+    {
+      "texto": "Friday",
+      "inicio": 122.472,
+      "fin": 122.93201
+    },
+    {
+      "texto": "from",
+      "inicio": 122.93201,
+      "fin": 124.112
+    },
+    {
+      "texto": "9",
+      "inicio": 124.112,
+      "fin": 125.272
+    },
+    {
+      "texto": "am",
+      "inicio": 125.272,
+      "fin": 125.57201
+    },
+    {
+      "texto": "to",
+      "inicio": 125.57201,
+      "fin": 126.192
+    },
+    {
+      "texto": "5",
+      "inicio": 126.192,
+      "fin": 126.892
+    },
+    {
+      "texto": "pm.",
+      "inicio": 126.892,
+      "fin": 127.43201
+    },
+    {
+      "texto": "That",
+      "inicio": 129.15201,
+      "fin": 129.472
+    },
+    {
+      "texto": "sounds",
+      "inicio": 129.472,
+      "fin": 129.87201
+    },
+    {
+      "texto": "good.",
+      "inicio": 129.87201,
+      "fin": 130.692
+    },
+    {
+      "texto": "And",
+      "inicio": 130.692,
+      "fin": 131.012
+    },
+    {
+      "texto": "what",
+      "inicio": 131.012,
+      "fin": 131.332
+    },
+    {
+      "texto": "is",
+      "inicio": 131.332,
+      "fin": 131.492
+    },
+    {
+      "texto": "the",
+      "inicio": 131.492,
+      "fin": 131.832
+    },
+    {
+      "texto": "starting",
+      "inicio": 131.832,
+      "fin": 132.252
+    },
+    {
+      "texto": "salary?",
+      "inicio": 132.252,
+      "fin": 133.292
+    },
+    {
+      "texto": "The",
+      "inicio": 133.852,
+      "fin": 133.992
+    },
+    {
+      "texto": "starting",
+      "inicio": 133.992,
+      "fin": 134.412
+    },
+    {
+      "texto": "salary",
+      "inicio": 134.412,
+      "fin": 134.81201
+    },
+    {
+      "texto": "is",
+      "inicio": 134.81201,
+      "fin": 135.292
+    },
+    {
+      "texto": "28,500",
+      "inicio": 135.292,
+      "fin": 138.572
+    },
+    {
+      "texto": "per",
+      "inicio": 138.572,
+      "fin": 139.25201
+    },
+    {
+      "texto": "year.",
+      "inicio": 139.25201,
+      "fin": 139.952
+    },
+    {
+      "texto": "Great!",
+      "inicio": 140.392,
+      "fin": 141.112
+    },
+    {
+      "texto": "What",
+      "inicio": 141.112,
+      "fin": 141.552
+    },
+    {
+      "texto": "about",
+      "inicio": 141.552,
+      "fin": 141.952
+    },
+    {
+      "texto": "holiday",
+      "inicio": 141.952,
+      "fin": 142.452
+    },
+    {
+      "texto": "leave",
+      "inicio": 142.452,
+      "fin": 142.672
+    },
+    {
+      "texto": "and",
+      "inicio": 142.672,
+      "fin": 143.25201
+    },
+    {
+      "texto": "paid",
+      "inicio": 143.25201,
+      "fin": 143.932
+    },
+    {
+      "texto": "sick",
+      "inicio": 143.932,
+      "fin": 144.29199
+    },
+    {
+      "texto": "leave?",
+      "inicio": 144.29199,
+      "fin": 144.732
+    },
+    {
+      "texto": "You",
+      "inicio": 144.512,
+      "fin": 145.272
+    },
+    {
+      "texto": "have",
+      "inicio": 145.272,
+      "fin": 145.552
+    },
+    {
+      "texto": "20",
+      "inicio": 145.552,
+      "fin": 146.132
+    },
+    {
+      "texto": "years",
+      "inicio": 146.132,
+      "fin": 146.732
+    },
+    {
+      "texto": "of",
+      "inicio": 146.732,
+      "fin": 147.072
+    },
+    {
+      "texto": "holiday",
+      "inicio": 147.072,
+      "fin": 147.59201
+    },
+    {
+      "texto": "leave",
+      "inicio": 147.59201,
+      "fin": 148.31201
+    },
+    {
+      "texto": "per",
+      "inicio": 148.31201,
+      "fin": 148.632
+    },
+    {
+      "texto": "year",
+      "inicio": 148.632,
+      "fin": 149.03201
+    },
+    {
+      "texto": "and",
+      "inicio": 149.03201,
+      "fin": 149.59201
+    },
+    {
+      "texto": "10",
+      "inicio": 149.59201,
+      "fin": 149.972
+    },
+    {
+      "texto": "of",
+      "inicio": 149.972,
+      "fin": 150.272
+    },
+    {
+      "texto": "paid",
+      "inicio": 150.272,
+      "fin": 150.75201
+    },
+    {
+      "texto": "sick",
+      "inicio": 150.75201,
+      "fin": 151.352
+    },
+    {
+      "texto": "leave.",
+      "inicio": 151.352,
+      "fin": 151.692
+    },
+    {
+      "texto": "Thank",
+      "inicio": 151.912,
+      "fin": 152.29199
+    },
+    {
+      "texto": "you",
+      "inicio": 152.29199,
+      "fin": 152.432
+    },
+    {
+      "texto": "very",
+      "inicio": 152.432,
+      "fin": 152.59201
+    },
+    {
+      "texto": "much,",
+      "inicio": 152.59201,
+      "fin": 153.15201
+    },
+    {
+      "texto": "George.",
+      "inicio": 153.15201,
+      "fin": 153.65201
+    },
+    {
+      "texto": "Everything",
+      "inicio": 153.65201,
+      "fin": 154.15201
+    },
+    {
+      "texto": "is",
+      "inicio": 154.15201,
+      "fin": 154.512
+    },
+    {
+      "texto": "very",
+      "inicio": 154.512,
+      "fin": 154.732
+    },
+    {
+      "texto": "clear.",
+      "inicio": 154.732,
+      "fin": 156.012
+    },
+    {
+      "texto": "Have",
+      "inicio": 156.012,
+      "fin": 156.132
+    },
+    {
+      "texto": "a",
+      "inicio": 156.132,
+      "fin": 156.352
+    },
+    {
+      "texto": "nice",
+      "inicio": 156.352,
+      "fin": 156.512
+    },
+    {
+      "texto": "day",
+      "inicio": 156.512,
+      "fin": 156.79199
+    },
+    {
+      "texto": "too.",
+      "inicio": 156.79199,
+      "fin": 157.15201
+    },
+    {
+      "texto": "Bye!",
+      "inicio": 157.15201,
+      "fin": 158.132
+    }
+  ]
+}

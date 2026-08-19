@@ -1,0 +1,8 @@
+data/media/**/*.mov filter=lfs diff=lfs merge=lfs -text
+data/media/**/*.png filter=lfs diff=lfs merge=lfs -text
+data/media/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+data/media/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+data/media/**/*.webp filter=lfs diff=lfs merge=lfs -text
+data/media/**/*.gif filter=lfs diff=lfs merge=lfs -text
+data/media/**/*.aep filter=lfs diff=lfs merge=lfs -text
+data/media/**/*.mp4 filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,61 @@
+[Script Info]
+; Estilo de subtítulos de Modula — blanco y amarillo (#FFC300).
+; Generado por System Content Studio, coherente con la identidad de
+; remotion/scenes/contexto/ (animaciones de contexto) y remotion/scenes/reel/.
+;
+; Dos estilos:
+;   - Default : el texto hablado normal. Blanco, con contorno y sombra negros
+;               para leerse sobre cualquier fondo de vídeo.
+;   - Clave   : la palabra o frase que no se puede perder. Caja amarilla
+;               opaca (#FFC300) con tinta oscura encima — es la traducción a
+;               subtítulo del componente "Resalte" de remotion/lienzo/piezas.tsx
+;               (la barra amarilla que se abre detrás de una palabra).
+;
+; Para marcar una palabra como clave dentro de una línea, usa el override de
+; ASS que cambia de estilo a mitad de frase y vuelve al default:
+;   {\rClave}PALABRA{\r}
+; Es el mismo criterio que ya usa el guion en la app con **palabra** — cuando
+; pases el guion a subtítulos, lo marcado en negrita/clave es lo que se pinta
+; con el estilo Clave aquí.
+;
+; Tipografía: Inter Black / Inter ExtraBold (la misma familia del proyecto,
+; remotion/vox/fonts.ts). Si el editor de vídeo no tiene Inter instalada como
+; fuente del SISTEMA (las fuentes de Remotion se cargan solo para el vídeo, no
+; quedan instaladas en el ordenador), cambia "Fontname" abajo por una gótica
+; de trazo grueso que sí tengas: Archivo Black, Arial Black o Helvetica Neue
+; Bold funcionan bien como sustituto.
+;
+; Cómo importarlo:
+;   - DaVinci Resolve: arrastra este .ass a la Media Pool y suéltalo en una
+;     pista de subtítulos del timeline, o Archivo > Importar > Subtítulo.
+;     Las versiones recientes de Resolve leen el estilo (color, caja, fuente)
+;     directamente; en versiones antiguas puede importar solo el texto y hay
+;     que reconstruir el estilo a mano con los valores de este archivo.
+;   - Premiere Pro: no lee .ass de forma nativa. O bien se abre en Aegisub y
+;     se exporta a .srt para tener el texto (sin el estilo), o se incrusta
+;     directamente en el vídeo con ffmpeg antes de montar (ver más abajo).
+;   - Aegisub / VLC: abren este archivo tal cual, con el estilo completo. Es
+;     el sitio más cómodo para retocar tiempos o texto antes de exportar.
+;   - Incrustado directo con ffmpeg (vale para cualquier editor, como "hard
+;     sub" ya quemado en el vídeo):
+;       ffmpeg -i video.mp4 -vf "ass=subtitulos-modula.ass" video_subtitulado.mp4
+Title: Modula — subtítulos blanco y amarillo
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+PlayResX: 1920
+PlayResY: 1080
+YCbCr Matrix: TV.601
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Inter Black,78,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,4,2,2,90,90,130,1
+Style: Clave,Inter Black,78,&H00141414,&H00141414,&H0000C3FF,&H00000000,-1,0,0,0,100,100,0,0,3,10,0,2,90,90,130,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Comment: 0,0:00:00.00,0:00:03.00,Default,,0,0,0,,--- líneas de ejemplo, bórralas al montar el vídeo real ---
+Dialogue: 0,0:00:00.00,0:00:03.20,Default,,0,0,0,,Cuando algo no funciona en tu empresa,
+Dialogue: 0,0:00:03.20,0:00:06.80,Default,,0,0,0,,casi nunca es un problema de {\rClave}RECURSOS{\r}.
+Dialogue: 0,0:00:06.80,0:00:10.40,Default,,0,0,0,,Es un problema de {\rClave}SISTEMA{\r}.
+Dialogue: 0,0:00:10.40,0:00:14.00,Default,,0,0,0,,Y un sistema mejor diseñado {\rClave}rinde más{\r} con la misma gente.

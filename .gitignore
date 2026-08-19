@@ -41,7 +41,14 @@ yarn-error.log*
 next-env.d.ts
 
 # base de datos local (contenido personal, no se versiona)
-/data/
+/data/studio.db
+/data/studio.db-shm
+/data/studio.db-wal
+
+# data/media SÍ se versiona (vía Git LFS, ver .gitattributes) salvo lo de
+# abajo — archivos sueltos demasiado grandes para el límite de GitHub LFS
+# (2 GB por archivo). Si generas otro así, añádelo aquí a mano.
+/data/media/generated/subtitulos-render-subs_m6kmpgz8xt-overlay.mov
 
 # Cerrojo del generador de imágenes (scripts/gen-capas-contexto.mjs)
 .gen.lock
