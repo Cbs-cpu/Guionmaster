@@ -19,6 +19,10 @@ import { makeId } from "./utils";
 //   - Solo 4 campos son obligatorios (nombre, ideaFundamental, fuente.obraOMarco
 //     y conceptos). Todo lo demás es opcional, para que un import parcial no
 //     falle por un campo que el LLM no rellenó.
+//   - `clase` es el contenido principal: una clase larga en prosa continua,
+//     no una ficha trinchada en campos sueltos. El resto de campos
+//     (resumen, aplicacion, ejemplos...) son apoyo secundario de consulta
+//     rápida, no un sustituto de la clase.
 //   - `id` se genera solo si no viene, y nunca puede pisar uno de los 7 marcos
 //     de serie: un import no debe poder sobrescribir la base curada.
 //   - La regla FUENTE → CONCEPTO → INTERPRETACIÓN del proyecto se sostiene
@@ -47,6 +51,7 @@ const CategoriaImportSchema = z.object({
   fuente: FuenteImportSchema,
   conceptos: z.array(ConceptoImportSchema).min(1),
 
+  clase: z.string().optional(),
   resumen: z.string().optional(),
   aplicacion: z.string().optional(),
   ejemplos: z.array(z.string()).optional(),
@@ -217,6 +222,7 @@ export function parseImportedKnowledgeDetailed(raw: string): ImportResult {
         termino: c.termino,
         definicion: c.definicion,
       })),
+      clase: cat.clase,
       resumen: cat.resumen,
       aplicacion: cat.aplicacion,
       ejemplos: cat.ejemplos,
@@ -277,10 +283,12 @@ export function buildSchemaExample(): string {
                 "La velocidad a la que el sistema genera resultado completo, no trabajo a medias.",
             },
           ],
+          clase:
+            "Aquí va la CLASE COMPLETA: un texto largo y desarrollado en prosa continua (como un capítulo de libro o un artículo largo, no una lista de puntos), que explica el marco de principio a fin: de dónde viene, qué problema resuelve, cómo funciona cada pieza, cómo se relacionan entre sí, cómo se aplica en la práctica con ejemplos, qué errores comete la gente y qué se lleva el lector al terminar. Sin límite de longitud artificial: tan larga como haga falta para explicarlo bien.",
           resumen:
-            "Explicación en prosa del marco, de 2 a 5 párrafos, para poder estudiarlo del tirón.",
+            "Opcional: 2-5 párrafos que resumen la clase, por si se quiere repasar rápido sin leerla entera.",
           aplicacion:
-            "Cómo se aplica esto concretamente a una pyme que implanta Odoo o a un negocio de entrenadores personales.",
+            "Opcional: cómo se aplica esto concretamente a una pyme que implanta Odoo o a un negocio de entrenadores personales (si no está ya cubierto dentro de la clase).",
           ejemplos: [
             "Ventas cierra en un día pero facturación tarda una semana: el throughput real lo marca facturación.",
           ],
@@ -318,11 +326,11 @@ REGLAS
 - Responde ÚNICAMENTE con JSON válido. Sin texto antes ni después, sin bloques de markdown, sin \`\`\`.
 - Cita siempre la fuente real del marco o concepto en "fuente" (autor y obra/marco). Si algo es interpretación tuya y no de una fuente concreta, dilo en "fuente.nota". No te inventes autores, libros ni estadísticas.
 - Escribe en español de España, en lenguaje claro y directo, sin relleno corporativo.
-- "conceptos" es la lista de términos clave con su definición breve. Incluye todos los que sean relevantes (normalmente entre 5 y 12).
-- "resumen" es una explicación en prosa (2-5 párrafos) para poder estudiar el marco del tirón.
-- "aplicacion" explica cómo aplica concretamente a una pyme o a un negocio de entrenadores personales.
+- LO MÁS IMPORTANTE ES "clase": quiero una CLASE LARGA Y COMPLETA en prosa continua, no un resumen de puntos sueltos ni una ficha de apuntes trocidada en mil campos. Escríbela como si fuera un capítulo de un libro o un artículo largo bien escrito: con desarrollo, transiciones entre ideas, ejemplos integrados en el propio texto, y explicando el marco de principio a fin (de dónde viene, qué problema resuelve, cómo funciona cada pieza y cómo se relacionan, cómo se aplica, qué errores comete la gente). No la trocees en subtítulos cortos ni la conviertas en una lista — que se lea del tirón, tan larga como haga falta para explicarlo bien de verdad. No escatimes longitud.
+- "conceptos" es la lista de términos clave con su definición breve, para poder buscarlos rápido — es un índice de apoyo, no sustituye a la clase.
+- "resumen", "aplicacion", "ejemplos", "erroresComunes", "preguntasDiagnostico" e "ideasContenido" son opcionales y secundarios: solo un apoyo rápido de consulta si ya está todo bien explicado dentro de "clase".
 
-FORMATO EXACTO (los campos obligatorios son nombre, ideaFundamental, fuente.obraOMarco y conceptos; el resto son opcionales pero mejor si los rellenas):
+FORMATO EXACTO (los campos obligatorios son nombre, ideaFundamental, fuente.obraOMarco y conceptos; "clase" no es obligatorio en el esquema pero es el que de verdad quiero que rellenes largo y bien):
 ${buildSchemaExample()}`;
 }
 

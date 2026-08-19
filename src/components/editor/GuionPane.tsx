@@ -18,8 +18,9 @@ import {
 } from "@/lib/types";
 import { estimateSpeakingSeconds, formatSeconds } from "@/lib/utils";
 import { stripScriptMarks } from "@/lib/script-marks";
-import { Maximize2, SquarePen } from "lucide-react";
+import { LayoutGrid, Maximize2, SquarePen } from "lucide-react";
 import type { ActiveBlock, ViewMode } from "./types";
+import { BOARD_DEPTH_LABELS, type BoardDepth, type ChapterBoard } from "@/lib/types";
 
 interface Cue {
   label: string;
@@ -178,7 +179,11 @@ export function GuionPane({
       label: s.label,
       content: (
         <>
-          <MarkedText text={s.text} className="font-display text-2xl sm:text-[1.75rem] leading-[1.75]" />
+          <MarkedText
+            text={s.text}
+            visuals={script.visuals}
+            className="font-display text-2xl sm:text-[1.75rem] leading-[1.75]"
+          />
           <p className="text-[11px] text-ink-faint mt-3">~{formatSeconds(speakingSeconds(s.text))} al leerlo</p>
           {s.cues.length > 0 && <CueRail cues={s.cues} className="mt-5" />}
         </>
@@ -196,7 +201,63 @@ export function GuionPane({
     );
   }
 
-  const header = <ModeButtons onSetViewMode={onSetViewMode} />;
+  if (viewMode === "tableros") {
+    const chapters = script.chapters ?? [];
+    const withBoard = chapters.filter((c) => c.board?.needed || c.board?.script);
+    if (withBoard.length === 0) {
+      return (
+        <div className="h-full flex flex-col">
+          <div className="flex items-center justify-between gap-3 px-5 sm:px-8 py-3 border-b border-rule bg-paper-raised shrink-0">
+            <span className="label-caps text-[10px] text-ink-faint">Modo tableros</span>
+            <button
+              onClick={() => onSetViewMode("edicion")}
+              className="press label-caps text-[10px] text-ink-faint hover:text-accent"
+            >
+              Salir
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-8 text-center">
+            <p className="max-w-sm text-sm text-ink-faint leading-relaxed">
+              Ningún capítulo tiene tablero marcado todavía. En Modo edición, abre un capítulo y
+              activa &quot;Necesita tablero&quot; en Notas de producción → Tablero.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    const flowSections: ReadFlowSection[] = withBoard.map((c) => ({
+      id: `chapter:${c.id}`,
+      label: c.titulo,
+      content: c.board?.script ? (
+        <>
+          {c.board.depth && (
+            <p className="label-caps text-[10px] text-blueprint mb-3">{BOARD_DEPTH_LABELS[c.board.depth]}</p>
+          )}
+          <pre className="whitespace-pre-wrap font-label text-[13px] leading-relaxed text-ink">
+            {c.board.script}
+          </pre>
+        </>
+      ) : (
+        <p className="text-sm text-ink-faint">
+          Marcado como &quot;necesita tablero&quot; pero todavía no tiene guion de tablero. Pídeselo a
+          Claude Code (skill <code className="text-ink-soft">guionizador</code>) o pégalo en Modo edición.
+        </p>
+      ),
+    }));
+    return (
+      <ReadFlow
+        sections={flowSections}
+        initialId={active.kind === "chapter" ? `chapter:${active.id}` : undefined}
+        modeLabel="Modo tableros"
+        onIndexChange={(_, i) => onNavigateActive({ kind: "chapter", id: withBoard[i].id })}
+        onExit={() => onSetViewMode("edicion")}
+      />
+    );
+  }
+
+  const header = (
+    <ModeButtons onSetViewMode={onSetViewMode} showTableros={script.type === "youtube"} />
+  );
 
   if (script.type === "carrusel") {
     const slide = slides.find((s) => active.kind === "slide" && s.id === active.id) ?? slides[0];
@@ -356,6 +417,72 @@ export function GuionPane({
           </div>
         </div>
       </div>
+
+      <ChapterBoardFields
+        board={chapter.board}
+        onChange={(board) => onUpdateChapter(chapter.id, { board })}
+      />
+    </div>
+  );
+}
+
+function ChapterBoardFields({
+  board,
+  onChange,
+}: {
+  board: ChapterBoard | undefined;
+  onChange: (board: ChapterBoard) => void;
+}) {
+  const needed = board?.needed ?? false;
+
+  function patch(p: Partial<ChapterBoard>) {
+    onChange({ needed, script: board?.script, depth: board?.depth, ...p, updatedAt: new Date().toISOString() });
+  }
+
+  return (
+    <div className="mt-6 pt-6 border-t border-rule space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="label-caps text-[10px] text-ink-faint">Tablero</p>
+        <label className="flex items-center gap-2 text-xs text-ink-soft cursor-pointer">
+          <input
+            type="checkbox"
+            checked={needed}
+            onChange={(e) => patch({ needed: e.target.checked })}
+            className="accent-accent"
+          />
+          Necesita tablero
+        </label>
+      </div>
+
+      {needed && (
+        <>
+          <FieldShell label="Profundidad" hint="Referencia para la skill guionizador, no una regla estricta">
+            <Select
+              value={board?.depth ?? "standard"}
+              onChange={(e) => patch({ depth: e.target.value as BoardDepth })}
+              className="text-xs py-1.5"
+            >
+              {Object.entries(BOARD_DEPTH_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </Select>
+          </FieldShell>
+          <FieldShell
+            label="Guion de tablero (board-script.md)"
+            hint="Pégalo aquí tras pedírselo a Claude Code con la skill guionizador, o escríbelo a mano"
+          >
+            <Textarea
+              value={board?.script ?? ""}
+              onChange={(e) => patch({ script: e.target.value })}
+              rows={10}
+              placeholder="# BOARD SCRIPT&#10;&#10;## 0. Metadata&#10;..."
+              className="font-label text-[12px] leading-relaxed"
+            />
+          </FieldShell>
+        </>
+      )}
     </div>
   );
 }
@@ -365,7 +492,13 @@ function speakingSeconds(text: string): number {
   return estimateSpeakingSeconds(stripScriptMarks(text));
 }
 
-function ModeButtons({ onSetViewMode }: { onSetViewMode: (mode: ViewMode) => void }) {
+function ModeButtons({
+  onSetViewMode,
+  showTableros,
+}: {
+  onSetViewMode: (mode: ViewMode) => void;
+  showTableros?: boolean;
+}) {
   return (
     <div className="flex shrink-0 items-center gap-2.5">
       <button
@@ -383,6 +516,16 @@ function ModeButtons({ onSetViewMode }: { onSetViewMode: (mode: ViewMode) => voi
         <SquarePen className="h-3 w-3" />
         Guion
       </button>
+      {showTableros && (
+        <button
+          onClick={() => onSetViewMode("tableros")}
+          title="Guiones de tablero (formato canvas-guionizador) de los capítulos"
+          className="press label-caps flex items-center gap-1.5 text-[10px] text-ink-faint hover:text-accent"
+        >
+          <LayoutGrid className="h-3 w-3" />
+          Tableros
+        </button>
+      )}
     </div>
   );
 }

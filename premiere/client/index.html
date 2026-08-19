@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>System Content Studio</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="cabecera">
+      <div class="marca">
+        <span class="punto"></span>
+        <span>System Content Studio</span>
+      </div>
+      <button id="recargar" class="icono" title="Volver a leer los recursos">↻</button>
+    </header>
+
+    <!-- Estado de conexión con la app Next. Es lo primero que se ve porque
+         es el fallo más probable: el panel no sirve de nada si el servidor
+         (npm run dev) no está levantado. -->
+    <div id="conexion" class="aviso oculto"></div>
+
+    <div class="destino">
+      <label for="pista">Insertar en</label>
+      <select id="pista"></select>
+    </div>
+
+    <nav class="pestanas" id="pestanas"></nav>
+
+    <main id="lista" class="lista">
+      <p class="vacio">Cargando recursos…</p>
+    </main>
+
+    <footer id="estado" class="estado"></footer>
+
+    <script src="./lib/cep-bridge.js"></script>
+    <script src="./main.js"></script>
+  </body>
+</html>

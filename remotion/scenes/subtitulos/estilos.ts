@@ -1,0 +1,125 @@
+// Catálogo de estilos de subtítulo animado.
+//
+// Los cuatro comparten motor (mismo componente Palabra, mismos datos de
+// transcripción) pero difieren en tratamiento — no es un cambio de color por
+// encima del mismo dibujo, cada uno resuelve "cómo se lee una palabra que
+// llega" de una forma distinta:
+//
+//   - modula   → la identidad de marca: contorno duro, rebote marcado, caja
+//                sólida amarilla en la palabra clave. El más "hormonas".
+//   - minimal  → sin contorno ni caja, solo sombra suave y un fundido con
+//                subida corta. Para cuando el texto no puede competir con el
+//                plano — entrevistas, voces en off sobre imagen ya cargada.
+//   - bloques  → CADA palabra (no solo la clave) va sobre su propio bloque de
+//                color, estilo etiqueta apilada — el look "captions de
+//                TikTok" llevado a la identidad de Modula.
+//   - glow     → hermano del fondo oscuro+verde de scenes/glow/: sin
+//                contorno, con resplandor de color en vez de trazo, entrada
+//                blanda sin rebote.
+
+export type TratamientoTexto = "contorno" | "sombra-suave" | "glow";
+export type TratamientoPalabra = "simple" | "bloque-todas" | "caja-clave";
+export type TipoMuelle = "punch" | "posado";
+
+export interface EstiloSubtitulos {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  fontWeight: number;
+  fontSizeBase: number;
+  colorTexto: string;
+  /** Texto cuando va sobre un bloque/caja de color (necesita contraste con `colorAcento`). */
+  colorSobreAcento: string;
+  colorAcento: string;
+  /** Solo lo usa "bloque-todas": el color de los bloques que NO son la palabra clave. */
+  colorBloqueBase?: string;
+  tratamientoTexto: TratamientoTexto;
+  tratamientoPalabra: TratamientoPalabra;
+  muelle: TipoMuelle;
+  aberracionCromatica: boolean;
+  rotacion: boolean;
+  /** Fondo de la previsualización web (no forma parte del archivo real). */
+  fondoPreview: string;
+}
+
+export const ESTILOS: EstiloSubtitulos[] = [
+  {
+    id: "modula",
+    nombre: "Modula",
+    descripcion:
+      "Blanco y amarillo de marca. Contorno duro, rebote marcado, caja sólida en la palabra clave. El más enérgico de los cuatro.",
+    fontWeight: 800,
+    fontSizeBase: 64,
+    colorTexto: "#FAFAFA",
+    colorSobreAcento: "#141414",
+    colorAcento: "#FFC300",
+    tratamientoTexto: "contorno",
+    tratamientoPalabra: "caja-clave",
+    muelle: "punch",
+    aberracionCromatica: true,
+    rotacion: true,
+    fondoPreview: "linear-gradient(155deg, #1B1F1C 0%, #0B0D0B 60%, #050605 100%)",
+  },
+  {
+    id: "minimal",
+    nombre: "Minimal",
+    descripcion:
+      "Sin contorno ni caja. Fundido con subida corta, la palabra clave solo cambia de color. Para cuando el plano ya está cargado.",
+    fontWeight: 600,
+    fontSizeBase: 52,
+    colorTexto: "#F5F5F0",
+    colorSobreAcento: "#F5F5F0",
+    colorAcento: "#FFC300",
+    tratamientoTexto: "sombra-suave",
+    tratamientoPalabra: "simple",
+    muelle: "posado",
+    aberracionCromatica: false,
+    rotacion: false,
+    fondoPreview: "linear-gradient(155deg, #2A2A28 0%, #171715 100%)",
+  },
+  {
+    id: "bloques",
+    nombre: "Bloques",
+    descripcion:
+      "Cada palabra sobre su propio bloque de color — etiquetas apiladas, no solo la clave. El look de captions cortas de reels.",
+    fontWeight: 800,
+    fontSizeBase: 56,
+    colorTexto: "#FAFAFA",
+    colorSobreAcento: "#141414",
+    colorAcento: "#FFC300",
+    colorBloqueBase: "#242424",
+    tratamientoTexto: "contorno",
+    tratamientoPalabra: "bloque-todas",
+    muelle: "punch",
+    aberracionCromatica: false,
+    rotacion: true,
+    fondoPreview: "linear-gradient(155deg, #202020 0%, #0A0A0A 100%)",
+  },
+  {
+    id: "glow",
+    nombre: "Glow",
+    descripcion:
+      "Hermano del fondo oscuro con resplandor verde. Sin contorno, con brillo de color en vez de trazo, entrada blanda sin rebote.",
+    fontWeight: 700,
+    fontSizeBase: 58,
+    colorTexto: "#F2F5F1",
+    colorSobreAcento: "#0A0D0B",
+    colorAcento: "#6FEFA0",
+    tratamientoTexto: "glow",
+    tratamientoPalabra: "caja-clave",
+    muelle: "posado",
+    aberracionCromatica: false,
+    rotacion: false,
+    fondoPreview: "radial-gradient(circle at 50% 55%, rgba(111,239,160,0.18) 0%, #0A0D0B 62%)",
+  },
+];
+
+export const ESTILO_POR_DEFECTO = ESTILOS[0].id;
+
+export function buscarEstilo(id: string): EstiloSubtitulos {
+  const encontrado = ESTILOS.find((e) => e.id === id);
+  if (!encontrado) {
+    throw new Error(`No existe el estilo de subtítulos "${id}". Disponibles: ${ESTILOS.map((e) => e.id).join(", ")}`);
+  }
+  return encontrado;
+}

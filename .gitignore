@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# base de datos local (contenido personal, no se versiona)
+/data/
+
+# Cerrojo del generador de imágenes (scripts/gen-capas-contexto.mjs)
+.gen.lock

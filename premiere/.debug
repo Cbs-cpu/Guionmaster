@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Habilita la depuración remota del panel. Sin este archivo, un panel sin
+  firmar tampoco arranca en modo debug.
+
+  Con Premiere abierto y el panel cargado, se inspecciona desde Chrome en:
+      http://localhost:8092
+  Ahí sale la consola del panel — que es donde aparecen los errores de red
+  (CORS, servidor caído) que desde dentro de Premiere no se ven.
+-->
+<ExtensionList>
+  <Extension Id="com.modula.systemcontentstudio.panel">
+    <HostList>
+      <Host Name="PPRO" Port="8092" />
+    </HostList>
+  </Extension>
+</ExtensionList>

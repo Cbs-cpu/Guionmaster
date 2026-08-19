@@ -1,0 +1,193 @@
+/**
+ * Capa ExtendScript del panel: lo único que puede hablar con Premiere Pro.
+ *
+ * El panel (client/) es Chromium normal y no tiene acceso al proyecto; se
+ * comunica con este archivo por `CSInterface.evalScript`, que serializa
+ * argumentos y resultado como STRING. De ahí que todo entre y salga como
+ * JSON en texto: no es una manía, es la única forma de cruzar esa frontera.
+ *
+ * ExtendScript es ES3: nada de const/let, arrow functions, JSON nativo ni
+ * Array.prototype.indexOf. Todo lo que parezca "escrito raro" aquí abajo es
+ * por eso.
+ */
+
+/** Serializa una respuesta uniforme para el panel. */
+function respuesta(ok, datos, error) {
+  var partes = [];
+  partes.push('"ok":' + (ok ? "true" : "false"));
+  if (datos !== undefined && datos !== null) {
+    partes.push('"datos":' + datos);
+  }
+  if (error) {
+    // Se escapan comillas y barras para no romper el JSON de vuelta.
+    var limpio = String(error).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/[\r\n]+/g, " ");
+    partes.push('"error":"' + limpio + '"');
+  }
+  return "{" + partes.join(",") + "}";
+}
+
+function escapar(texto) {
+  return String(texto).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+/** ¿Hay un proyecto abierto? Sin esto, todo lo demás falla con errores crípticos. */
+function sccEstado() {
+  try {
+    if (!app.project) {
+      return respuesta(false, null, "No hay ningún proyecto abierto en Premiere.");
+    }
+    var nombreSecuencia = app.project.activeSequence ? app.project.activeSequence.name : "";
+    return respuesta(
+      true,
+      '{"proyecto":"' +
+        escapar(app.project.name) +
+        '","secuencia":"' +
+        escapar(nombreSecuencia) +
+        '","version":"' +
+        escapar(app.version) +
+        '"}'
+    );
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}
+
+/**
+ * Importa archivos al proyecto, dentro de un bin con nombre.
+ *
+ * `rutasJson` es un array JSON de rutas ABSOLUTAS de disco (las construye el
+ * panel a partir de /api/system/paths). Se comprueba que cada archivo exista
+ * antes de llamar a importFiles: si se le pasa una ruta muerta, Premiere
+ * ignora el lote entero sin decir por qué, y desde el panel parecería que
+ * "no ha pasado nada".
+ */
+function sccImportar(rutasJson, nombreBin) {
+  try {
+    if (!app.project) {
+      return respuesta(false, null, "No hay ningún proyecto abierto en Premiere.");
+    }
+
+    var rutas = eval("(" + rutasJson + ")");
+    if (!rutas || !rutas.length) {
+      return respuesta(false, null, "No se ha recibido ninguna ruta que importar.");
+    }
+
+    var existentes = [];
+    var faltan = [];
+    for (var i = 0; i < rutas.length; i++) {
+      var f = new File(rutas[i]);
+      if (f.exists) {
+        existentes.push(rutas[i]);
+      } else {
+        faltan.push(rutas[i]);
+      }
+    }
+
+    if (!existentes.length) {
+      return respuesta(false, null, "Ninguno de los archivos existe en disco. ¿Se ha renderizado ya?");
+    }
+
+    // Bin de destino: se reutiliza si ya existe, para no llenar el proyecto
+    // de carpetas duplicadas cada vez que se importa algo.
+    var raiz = app.project.rootItem;
+    var destino = null;
+    var bin = nombreBin && nombreBin.length ? nombreBin : "System Content Studio";
+    for (var j = 0; j < raiz.children.numItems; j++) {
+      var hijo = raiz.children[j];
+      if (hijo.type === ProjectItemType.BIN && hijo.name === bin) {
+        destino = hijo;
+        break;
+      }
+    }
+    if (!destino) {
+      destino = raiz.createBin(bin);
+    }
+
+    app.project.importFiles(existentes, /* suppressWarnings */ true, destino, /* asNumberedStills */ false);
+
+    return respuesta(
+      true,
+      '{"importados":' + existentes.length + ',"noEncontrados":' + faltan.length + ',"bin":"' + escapar(bin) + '"}'
+    );
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}
+
+/**
+ * Importa e inserta directamente en la secuencia activa, en la pista de
+ * vídeo indicada y en la posición del cursor de reproducción.
+ *
+ * Es lo que convierte el panel en algo útil de verdad: para un overlay
+ * (subtítulos con alfa, una animación de contexto) lo que quieres no es
+ * tenerlo en el bin, es tenerlo YA encima del plano en el que estás.
+ */
+function sccInsertarEnSecuencia(ruta, indicePista) {
+  try {
+    if (!app.project) {
+      return respuesta(false, null, "No hay ningún proyecto abierto en Premiere.");
+    }
+    var sec = app.project.activeSequence;
+    if (!sec) {
+      return respuesta(false, null, "No hay ninguna secuencia activa. Abre una en el timeline.");
+    }
+
+    var archivo = new File(ruta);
+    if (!archivo.exists) {
+      return respuesta(false, null, "El archivo no existe en disco: " + ruta);
+    }
+
+    var raiz = app.project.rootItem;
+    var antes = raiz.children.numItems;
+    app.project.importFiles([ruta], true, raiz, false);
+
+    // importFiles no devuelve el item creado, así que se busca el último
+    // añadido comparando el número de hijos antes/después.
+    var item = null;
+    if (raiz.children.numItems > antes) {
+      item = raiz.children[raiz.children.numItems - 1];
+    } else {
+      // Ya estaba importado: se busca por nombre de archivo.
+      var nombre = archivo.name;
+      for (var k = 0; k < raiz.children.numItems; k++) {
+        if (raiz.children[k].name === nombre) {
+          item = raiz.children[k];
+          break;
+        }
+      }
+    }
+    if (!item) {
+      return respuesta(false, null, "No se ha podido localizar el clip importado en el proyecto.");
+    }
+
+    var pista = typeof indicePista === "number" ? indicePista : parseInt(indicePista, 10);
+    if (isNaN(pista) || pista < 0) pista = 0;
+    if (pista >= sec.videoTracks.numTracks) {
+      return respuesta(
+        false,
+        null,
+        "La secuencia solo tiene " + sec.videoTracks.numTracks + " pistas de vídeo; pediste la V" + (pista + 1) + "."
+      );
+    }
+
+    var tiempo = sec.getPlayerPosition();
+    sec.videoTracks[pista].insertClip(item, tiempo.ticks);
+
+    return respuesta(true, '{"pista":' + (pista + 1) + ',"clip":"' + escapar(item.name) + '"}');
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}
+
+/** Cuántas pistas de vídeo tiene la secuencia activa, para poblar el selector del panel. */
+function sccPistas() {
+  try {
+    var sec = app.project ? app.project.activeSequence : null;
+    if (!sec) {
+      return respuesta(true, '{"pistas":0}');
+    }
+    return respuesta(true, '{"pistas":' + sec.videoTracks.numTracks + "}");
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}

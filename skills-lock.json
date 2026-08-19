@@ -108,6 +108,13 @@
       "sourceType": "github",
       "skillPath": "skills/video-script/SKILL.md",
       "computedHash": "2a2848491b60c1e5ae79d666c28acece6b0b586b8707cb50793db0cbdf7acb69"
+    },
+    "guionizador": {
+      "source": "local: c:/Users/Cobos/Desktop/miropriv/.claude/skills/guionizador/SKILL.md",
+      "sourceType": "local",
+      "skillPath": "guionizador/SKILL.md",
+      "computedHash": "8cec3a9834dcb9420c078f68798995202fa9c61b0984f610975b78e2d970dfc8",
+      "note": "Guionización de tableros estilo Miro (canvas-guionizador) para la app privada miropriv. Copiado a mano, no gestionado por el instalador de skills; si se actualiza en miropriv hay que volver a copiarlo."
     }
   }
 }

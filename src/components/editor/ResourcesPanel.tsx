@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { LinksSection } from "./LinksSection";
+import { VisualThumb } from "@/components/ui/VisualThumb";
 import { makeId } from "@/lib/utils";
-import type { ResourceLink, ScriptRecord } from "@/lib/types";
-import { ExternalLink, FileText, Trash2 } from "lucide-react";
+import { VISUAL_RESOURCE_LABELS, type ResourceLink, type ScriptRecord } from "@/lib/types";
+import { ExternalLink, FileText, ImageOff, Trash2 } from "lucide-react";
 
 export function ResourcesPanel({
   script,
@@ -39,6 +40,8 @@ export function ResourcesPanel({
 
   return (
     <div className="p-4 flex flex-col h-full">
+      <VisualsSection script={script} onPatch={onPatch} />
+
       <LinksSection script={script} />
 
       <p className="label-caps text-[10px] text-ink-faint px-1 mb-1">Recursos</p>
@@ -89,6 +92,59 @@ export function ResourcesPanel({
           Añadir recurso
         </Button>
       </div>
+    </div>
+  );
+}
+
+// Galería de infografías / imágenes de contexto / imágenes con foto propia
+// generadas con Kie.ai (skill `recursos-visuales`). Solo lectura + borrado
+// aquí: la generación en sí se hace en conversación con Claude Code, que
+// escribe el resultado en `script.visuals` a través de /api/db/state.
+function VisualsSection({
+  script,
+  onPatch,
+}: {
+  script: ScriptRecord;
+  onPatch: (patch: Partial<ScriptRecord>) => void;
+}) {
+  const visuals = script.visuals ?? [];
+
+  function remove(id: string) {
+    onPatch({ visuals: visuals.filter((v) => v.id !== id) });
+  }
+
+  return (
+    <div className="mb-5">
+      <p className="label-caps text-[10px] text-ink-faint px-1 mb-1">Recursos visuales</p>
+      <p className="px-1 mb-3 text-[12.5px] text-ink-faint leading-relaxed">
+        Infografías e imágenes generadas con IA. Pídeselas a Claude Code (skill{" "}
+        <code className="text-ink-soft">recursos-visuales</code>).
+      </p>
+
+      {visuals.length === 0 ? (
+        <p className="px-1 flex items-center gap-2 text-[13px] text-ink-faint italic mb-1">
+          <ImageOff className="h-3.5 w-3.5 shrink-0" />
+          Todavía no hay ninguna.
+        </p>
+      ) : (
+        <ul className="grid grid-cols-2 gap-2">
+          {visuals.map((v) => (
+            <li key={v.id} className="group relative overflow-hidden rounded-sm border border-rule">
+              <VisualThumb visual={v} />
+              <span className="label-caps absolute left-1 top-1 rounded-sm bg-ink/80 px-1.5 py-0.5 text-[8.5px] text-paper">
+                {VISUAL_RESOURCE_LABELS[v.kind]}
+              </span>
+              <button
+                onClick={() => remove(v.id)}
+                aria-label="Eliminar recurso visual"
+                className="press absolute right-1 top-1 rounded-sm bg-ink/80 p-1 text-paper opacity-0 transition-opacity hover:text-accent group-hover:opacity-100"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

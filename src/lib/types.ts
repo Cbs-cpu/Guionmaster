@@ -118,6 +118,25 @@ export const YOUTUBE_TYPE_LABELS: Record<YoutubeVideoType, string> = {
   tutorial: "Tutorial",
 };
 
+export type BoardDepth = "quick" | "standard" | "deep" | "exhaustive";
+
+export const BOARD_DEPTH_LABELS: Record<BoardDepth, string> = {
+  quick: "Rápido (3-6 frames)",
+  standard: "Estándar (6-12 frames)",
+  deep: "Profundo (10-20 frames)",
+  exhaustive: "Exhaustivo (20+ frames)",
+};
+
+// El guion del tablero (formato canvas-guionizador, skill `guionizador`)
+// vive aquí como texto markdown. El tablero Miro en sí se construye en la
+// app privada `miropriv`, no en esta app: esto es solo el board-script.md.
+export interface ChapterBoard {
+  needed: boolean;
+  script?: string;
+  depth?: BoardDepth;
+  updatedAt?: string;
+}
+
 export interface YoutubeChapter {
   id: string;
   titulo: string;
@@ -130,6 +149,7 @@ export interface YoutubeChapter {
     capturas: string;
     diagramas: string;
   };
+  board?: ChapterBoard;
 }
 
 // ─── Carrusel de Instagram ──────────────────────────────────────────────────
@@ -243,6 +263,7 @@ export interface ScriptRecord {
   // shared
   notes?: string;
   resources?: ResourceLink[];
+  visuals?: VisualResource[];
 
   // Entrelazado de documentos: de qué marcos de conocimiento nace este
   // contenido y con qué otros contenidos forma familia (un vídeo de YouTube,
@@ -250,6 +271,92 @@ export interface ScriptRecord {
   // se mantiene simétrico desde el store: si A apunta a B, B apunta a A.
   knowledgeIds?: string[];
   relatedScriptIds?: string[];
+}
+
+// ─── Recursos visuales (Kie.ai) ─────────────────────────────────────────────
+// Infografías, imágenes de contexto e imágenes compuestas con fotos de
+// referencia del usuario, generadas con Kie.ai y guardadas en disco
+// (data/media, servidas por /api/media/...). Los PDFs y presentaciones que
+// Claude ensambla a partir de estas imágenes se registran igual, con
+// `filePath` apuntando al documento final en vez de a una imagen suelta.
+
+export type VisualResourceKind =
+  | "infografia"
+  | "imagen-contexto"
+  | "imagen-usuario"
+  | "animacion"
+  | "documento-pdf"
+  | "presentacion"
+  | "otro";
+
+export const VISUAL_RESOURCE_LABELS: Record<VisualResourceKind, string> = {
+  infografia: "Infografía",
+  "imagen-contexto": "Imagen de contexto",
+  "imagen-usuario": "Imagen con foto tuya",
+  animacion: "Animación",
+  "documento-pdf": "PDF",
+  presentacion: "Presentación",
+  otro: "Otro",
+};
+
+/** Los recursos que se reproducen (vídeo) en vez de mostrarse como imagen fija. */
+export function isPlayableVisual(visual: Pick<VisualResource, "kind" | "filePath">): boolean {
+  return visual.kind === "animacion" || /\.(mp4|webm|mov)$/i.test(visual.filePath);
+}
+
+export interface VisualResource {
+  id: string;
+  kind: VisualResourceKind;
+  prompt: string;
+  model: string;
+  /** Ruta relativa dentro de data/media (p. ej. "generated/xyz.png"). */
+  filePath: string;
+  /** Si acompaña a un capítulo concreto de un vídeo de YouTube. */
+  chapterId?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+/** Fotos del usuario, subidas una vez y reutilizables como referencia en varias generaciones. */
+export interface ReferenceImage {
+  id: string;
+  label: string;
+  filePath: string;
+  addedAt: string;
+}
+
+/**
+ * Estilo de subtítulos descargable para cargar en un editor de vídeo
+ * externo. A diferencia de un `VisualResource`, no nace de un guion ni de
+ * una generación con Kie.ai: es un asset de identidad de canal, el mismo
+ * para cualquier vídeo, por eso vive en su propia lista en vez de colgar de
+ * `scripts[].visuals`.
+ *
+ * Dos formas muy distintas conviven aquí, y `filePath` es literal en ambas:
+ *   - Un archivo de subtítulos de texto (`.ass`) — lo lee DaVinci
+ *     Resolve/Aegisub/ffmpeg directamente. Sin animación por palabra: es
+ *     estilo estático (color, caja, contorno), no vídeo.
+ *   - Un CLIP DE VÍDEO con canal alfa (`.mov`, ProRes 4444) — el texto
+ *     animado (rebote por palabra, caja que aparece) renderizado como
+ *     overlay transparente. Premiere Pro no lee `.ass`, así que para
+ *     Premiere el "estilo de subtítulos" es literalmente esto: un archivo
+ *     que se arrastra a una pista por encima del vídeo, no un formato de
+ *     subtítulos.
+ */
+export interface SubtitleStyle {
+  id: string;
+  label: string;
+  /** Ruta relativa dentro de data/media — el archivo real que se descarga y se usa en el editor. */
+  filePath: string;
+  /**
+   * Si `filePath` no se puede reproducir en un navegador (ProRes 4444 con
+   * canal alfa no es un formato web), un MP4 con fondo que muestra el mismo
+   * movimiento, para previsualizarlo en /recursos. Sin esto, la miniatura
+   * cae al mockup CSS estático (caso de los `.ass`).
+   */
+  previewPath?: string;
+  notes: string;
+  createdAt: string;
 }
 
 export interface KnowledgeSource {
@@ -278,6 +385,13 @@ export interface KnowledgeCategory {
   problema?: string;
   conceptos: KnowledgeConcept[];
   fuente: KnowledgeSource;
+
+  // Contenido principal del documento: una clase larga en prosa continua
+  // (varias secciones, extensión de artículo o capítulo), pensada para
+  // estudiarse del tirón en modo lectura — no una lista de fragmentos
+  // sueltos. Es el campo que prioriza el import cuando existe; `resumen` y
+  // el resto de campos de abajo pasan a ser apoyo secundario opcional.
+  clase?: string;
 
   // Campos ampliados, pensados para el material que se importa desde fuera
   // (por ejemplo, una investigación pedida a un LLM). Los 7 marcos que vienen

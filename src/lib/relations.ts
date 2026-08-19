@@ -40,3 +40,37 @@ export function useScriptsFromKnowledge(categoryId: string): ScriptRecord[] {
     [scripts, categoryId]
   );
 }
+
+export interface VisualWithSource {
+  visual: NonNullable<ScriptRecord["visuals"]>[number];
+  scriptId: string;
+  scriptTitle: string;
+  chapterTitle?: string;
+}
+
+/**
+ * Todas las imágenes generadas (infografías, imágenes de contexto...) de
+ * todos los guiones, en un único listado — para que la biblioteca de
+ * Recursos visuales muestre de serie todo lo que se haya generado, sin
+ * tener que ir guion por guion a buscarlo ni importarlo a mano.
+ */
+export function useAllGeneratedVisuals(): VisualWithSource[] {
+  const scripts = useStudioStore((s) => s.scripts);
+  return useMemo(() => {
+    const out: VisualWithSource[] = [];
+    for (const script of scripts) {
+      for (const visual of script.visuals ?? []) {
+        const chapter = visual.chapterId
+          ? script.chapters?.find((c) => c.id === visual.chapterId)
+          : undefined;
+        out.push({
+          visual,
+          scriptId: script.id,
+          scriptTitle: script.title,
+          chapterTitle: chapter?.titulo,
+        });
+      }
+    }
+    return out.sort((a, b) => (a.visual.createdAt < b.visual.createdAt ? 1 : -1));
+  }, [scripts]);
+}

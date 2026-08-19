@@ -13,15 +13,22 @@ export function CategorySection({ category, index }: { category: KnowledgeCatego
         </blockquote>
       </header>
 
+      {category.clase && (
+        <div className="px-6 sm:px-8 py-7 border-b border-rule">
+          <p className="label-caps text-[10px] text-ink-faint mb-3">Clase</p>
+          <p className="font-display text-[15px] text-ink leading-[1.85] whitespace-pre-line">{category.clase}</p>
+        </div>
+      )}
+
       {category.resumen && (
         <div className="px-6 sm:px-8 py-6 border-b border-rule">
-          <p className="label-caps text-[10px] text-ink-faint mb-3">Resumen</p>
-          <p className="text-sm text-ink leading-relaxed whitespace-pre-line">{category.resumen}</p>
+          <p className="label-caps text-[10px] text-ink-faint mb-3">Resumen rápido</p>
+          <p className="text-sm text-ink-soft leading-relaxed whitespace-pre-line">{category.resumen}</p>
         </div>
       )}
 
       <div className="px-6 sm:px-8 py-6">
-        <p className="label-caps text-[10px] text-ink-faint mb-3">Conceptos</p>
+        <p className="label-caps text-[10px] text-ink-faint mb-3">Conceptos (índice)</p>
         <dl className="divide-y divide-rule">
           {category.conceptos.map((c) => (
             <div key={c.id} className="py-3 grid sm:grid-cols-[11rem_1fr] gap-1.5 sm:gap-6">

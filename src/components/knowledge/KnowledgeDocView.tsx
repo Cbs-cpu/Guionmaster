@@ -88,11 +88,28 @@ function DocView({
           </>
         ),
       },
+      // La clase larga se lee de un tirón, como un artículo: una sola
+      // sección continua, no trinchada concepto a concepto. El desglose por
+      // concepto queda como índice de apoyo aparte (ver más abajo), no como
+      // una sección de lectura por cada término.
+      ...(category.clase
+        ? [
+            {
+              id: "clase",
+              label: "Clase",
+              content: (
+                <p className="font-display text-xl sm:text-2xl leading-[1.85] whitespace-pre-line">
+                  {category.clase}
+                </p>
+              ),
+            },
+          ]
+        : []),
       ...(category.resumen
         ? [
             {
               id: "resumen",
-              label: "Resumen",
+              label: category.clase ? "Resumen rápido" : "Resumen",
               content: (
                 <p className="font-display text-2xl sm:text-[1.75rem] leading-[1.6] whitespace-pre-line">
                   {category.resumen}
@@ -101,11 +118,20 @@ function DocView({
             },
           ]
         : []),
-      ...category.conceptos.map((c) => ({
-        id: c.id,
-        label: c.termino,
-        content: <p className="font-display text-2xl sm:text-[1.75rem] leading-[1.6]">{c.definicion}</p>,
-      })),
+      {
+        id: "conceptos",
+        label: "Conceptos (índice)",
+        content: (
+          <dl className="space-y-5">
+            {category.conceptos.map((c) => (
+              <div key={c.id}>
+                <dt className="font-display text-xl sm:text-2xl leading-snug">{c.termino}</dt>
+                <dd className="text-base text-ink-soft leading-relaxed mt-1">{c.definicion}</dd>
+              </div>
+            ))}
+          </dl>
+        ),
+      },
       ...listSection("aplicacion", "Cómo aplica", category.aplicacion ? [category.aplicacion] : undefined),
       ...listSection("ejemplos", "Ejemplos", category.ejemplos),
       ...listSection("errores", "Errores comunes", category.erroresComunes),

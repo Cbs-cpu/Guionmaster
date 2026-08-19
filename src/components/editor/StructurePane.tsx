@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Input, Select, FieldShell } from "@/components/ui/Field";
 import { StaticTag } from "@/components/ui/Chip";
-import { Plus, Star, Trash2 } from "lucide-react";
+import { LayoutGrid, Plus, Star, Trash2 } from "lucide-react";
 import {
   CAROUSEL_SLIDE_LABELS,
   REEL_BEAT_LABELS,
@@ -161,7 +161,13 @@ export function StructurePane({
                     <span className={cn("label-caps text-[10px] shrink-0", isActive ? "text-paper/60" : "text-ink-faint")}>
                       {i + 1}
                     </span>
-                    <span className="truncate">{ch.titulo}</span>
+                    <span className="truncate flex-1">{ch.titulo}</span>
+                    {ch.board?.needed && (
+                      <LayoutGrid
+                        className={cn("h-3 w-3 shrink-0", isActive ? "text-paper/70" : "text-blueprint")}
+                        aria-label="Necesita tablero"
+                      />
+                    )}
                   </button>
                 </li>
               );

@@ -10,6 +10,14 @@
 //   **palabra**          → clave: la idea que no se puede perder
 //   [pausa]              → marca sin contenido
 //   [sub: Texto rótulo]  → marca con contenido
+//   [[clave|frase]]      → ancla: la frase queda subrayada y enlazada a la
+//                          animación de contexto con ese id de composición
+//
+// El ancla es distinta del resto: no es una anotación que se intercala entre
+// palabras, sino que ENVUELVE un tramo del texto hablado. Por eso la frase
+// sobrevive intacta a stripScriptMarks() — al leer a cámara no cambia nada; lo
+// que cambia es que en modo guion ese tramo se ve subrayado y al pasar el
+// ratón por encima se reproduce el clip que va montado justo ahí.
 
 export type MarkKey = "sub" | "anim" | "corte" | "zoom" | "broll" | "grafico" | "pausa" | "nota";
 
@@ -74,9 +82,15 @@ export type MarkToken =
   | { kind: "texto"; text: string }
   | { kind: "enfasis"; text: string }
   | { kind: "clave"; text: string }
-  | { kind: "marca"; def: MarkDef; text: string };
+  | { kind: "marca"; def: MarkDef; text: string }
+  /** Tramo hablado enlazado a una animación. `clave` = id de la composición. */
+  | { kind: "ancla"; clave: string; text: string };
 
-const TOKEN_RE = /\*\*([^*]+)\*\*|\*([^*\n]+)\*|\[([^\]:\n]+?)(?::([^\]\n]*))?\]/g;
+// El ancla `[[clave|frase]]` va la primera en la alternancia a propósito: si
+// fuera detrás, el `[` inicial lo capturaría antes la regla de marca normal y
+// el ancla se leería como una marca desconocida.
+const TOKEN_RE =
+  /\[\[([^\]|\n]+)\|([^\]\n]+)\]\]|\*\*([^*]+)\*\*|\*([^*\n]+)\*|\[([^\]:\n]+?)(?::([^\]\n]*))?\]/g;
 
 export function parseScriptMarks(input: string): MarkToken[] {
   const tokens: MarkToken[] = [];
@@ -84,7 +98,7 @@ export function parseScriptMarks(input: string): MarkToken[] {
 
   for (const match of input.matchAll(TOKEN_RE)) {
     const start = match.index ?? 0;
-    const [full, clave, enfasis, marca, contenido] = match;
+    const [full, anclaClave, anclaTexto, clave, enfasis, marca, contenido] = match;
 
     // Un corchete que no corresponde a ninguna marca conocida se deja tal cual:
     // el usuario puede estar escribiendo entre corchetes por otro motivo.
@@ -93,7 +107,8 @@ export function parseScriptMarks(input: string): MarkToken[] {
 
     if (start > cursor) tokens.push({ kind: "texto", text: input.slice(cursor, start) });
 
-    if (clave) tokens.push({ kind: "clave", text: clave });
+    if (anclaClave) tokens.push({ kind: "ancla", clave: anclaClave.trim(), text: anclaTexto });
+    else if (clave) tokens.push({ kind: "clave", text: clave });
     else if (enfasis) tokens.push({ kind: "enfasis", text: enfasis });
     else if (def) tokens.push({ kind: "marca", def, text: (contenido ?? "").trim() });
 
@@ -111,6 +126,13 @@ export function stripScriptMarks(input: string): string {
     .join("")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
+}
+
+/** Ids de animación referenciados por el texto, en orden de aparición. */
+export function anclasDe(input: string): string[] {
+  return parseScriptMarks(input)
+    .filter((t): t is Extract<MarkToken, { kind: "ancla" }> => t.kind === "ancla")
+    .map((t) => t.clave);
 }
 
 export function markSnippet(def: MarkDef): string {

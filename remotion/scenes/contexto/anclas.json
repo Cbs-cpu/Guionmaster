@@ -1,0 +1,70 @@
+{
+  "_": "Dónde va cada animación dentro del guion hablado. Única fuente de verdad: la leen tanto las escenas de Remotion como scripts/anclar-guion.mjs, que escribe las marcas [[clave|frase]] en data/studio.db. La clave de cada entrada es el id de la composición. `ancla` tiene que coincidir LITERALMENTE con un tramo del campo `guion` del capítulo, o el script aborta.",
+  "guion": "script_2s7nio1s6a",
+  "puntos": {
+    "parches-sueltos": {
+      "capitulo": "chapter_66e9fbghmb",
+      "ancla": "Contratar a alguien más en atención al cliente. Presionar a logística. Cambiar de CRM."
+    },
+    "problema-vuelve": {
+      "capitulo": "chapter_66e9fbghmb",
+      "ancla": "Cambia de forma, aparece en otro sitio, pero vuelve."
+    },
+    "efecto-a-distancia": {
+      "capitulo": "chapter_66e9fbghmb",
+      "ancla": "tocar una cosa mueve otras cosas, muchas veces lejos de donde tocaste"
+    },
+    "suma-de-partes": {
+      "capitulo": "chapter_aw41bmx6tw",
+      "ancla": "el comportamiento del conjunto es distinto a la suma de sus partes"
+    },
+    "bucle-retroalimentacion": {
+      "capitulo": "chapter_aw41bmx6tw",
+      "ancla": "los bucles de retroalimentación, feedback loops"
+    },
+    "retrasos-delay": {
+      "capitulo": "chapter_aw41bmx6tw",
+      "ancla": "los retrasos, delays, el tiempo entre que haces algo y ves su efecto"
+    },
+    "decision-aislada": {
+      "capitulo": "chapter_pn0g1d01ai",
+      "ancla": "Ventas decide bajar el precio de un producto para cerrar más operaciones este trimestre."
+    },
+    "stock-acumulacion": {
+      "capitulo": "chapter_pn0g1d01ai",
+      "ancla": "empiezan a acumularse pedidos pendientes — eso es lo que en pensamiento sistémico se llama un stock"
+    },
+    "silos-informacion": {
+      "capitulo": "chapter_p44pz4102s",
+      "ancla": "los silos de información"
+    },
+    "cuello-de-botella": {
+      "capitulo": "chapter_p44pz4102s",
+      "ancla": "los cuellos de botella, lo que en teoría de restricciones se llama el constraint"
+    },
+    "optimizar-fuera-del-cuello": {
+      "capitulo": "chapter_p44pz4102s",
+      "ancla": "mejorar una parte del sistema que no es el cuello de botella no mejora el rendimiento global"
+    },
+    "value-stream": {
+      "capitulo": "chapter_p44pz4102s",
+      "ancla": "mapeo el flujo completo — lo que en Lean se llama value stream"
+    },
+    "tecnologia-al-final": {
+      "capitulo": "chapter_p44pz4102s",
+      "ancla": "La tecnología entra al final, no al principio."
+    },
+    "ocho-pasos": {
+      "capitulo": "chapter_f6fyl827yq",
+      "ancla": "observar, mapear, entender, diagnosticar, diseñar, implementar, medir, optimizar"
+    },
+    "medir-optimizar": {
+      "capitulo": "chapter_f6fyl827yq",
+      "ancla": "medir y optimizar, son las que casi todo el mundo se salta"
+    },
+    "cuatro-preguntas": {
+      "capitulo": "chapter_76vrqj2x0u",
+      "ancla": "¿Dónde se acumula trabajo sin procesar ahora mismo?"
+    }
+  }
+}

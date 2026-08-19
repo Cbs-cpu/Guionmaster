@@ -13,6 +13,7 @@ export const NAV_ITEMS = [
   { href: "/biblioteca", index: "04", label: "Biblioteca" },
   { href: "/conocimiento", index: "05", label: "Conocimiento" },
   { href: "/fuentes", index: "06", label: "Fuentes" },
+  { href: "/recursos", index: "07", label: "Recursos visuales" },
 ];
 
 export function Sidebar() {
