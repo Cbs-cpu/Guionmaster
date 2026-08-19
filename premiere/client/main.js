@@ -31,6 +31,7 @@ var estado = {
   vista: "recursos",
   archivoElegido: null, // { ruta, nombre }
   transcripcion: null, // { filePath, palabras }
+  lineas: null, // líneas ya agrupadas (sin renderizar), para el preview en vivo
   generado: null, // { previewPath, filePath }
 };
 
@@ -453,7 +454,8 @@ $("#usarClipPrincipal").onclick = function () {
     .then(function (d) {
       estado.archivoElegido = { ruta: d.ruta, nombre: d.nombre, pistaOrigen: d.pista, totalPistas: d.totalPistas };
       $("#archivoElegido").textContent = d.nombre + " (pista V" + (d.pista + 1) + ")";
-      $("#generarBtn").disabled = false;
+      $("#transcribirBtn").disabled = false;
+      $("#previewBloque").classList.add("oculto");
       $("#transcribirResultado").classList.add("oculto");
     })
     .catch(function (e) {
@@ -467,7 +469,8 @@ $("#elegirArchivo").onclick = function () {
       if (!d.ruta) return; // cancelado
       estado.archivoElegido = { ruta: d.ruta, nombre: d.nombre, pistaOrigen: null };
       $("#archivoElegido").textContent = d.nombre;
-      $("#generarBtn").disabled = false;
+      $("#transcribirBtn").disabled = false;
+      $("#previewBloque").classList.add("oculto");
       $("#transcribirResultado").classList.add("oculto");
     })
     .catch(function (e) {
@@ -481,17 +484,52 @@ function subirBase(nombre) {
   return nombre;
 }
 
-$("#generarBtn").onclick = function () {
-  if (!estado.archivoElegido) return;
-  var claves = $("#clavesInput")
+function clavesElegidas() {
+  return $("#clavesInput")
     .value.split(",")
     .map(function (s) {
       return s.trim();
     })
     .filter(Boolean);
-  var estiloId = $("#estiloSelect").value;
+}
 
-  $("#generarBtn").disabled = true;
+// ── Preview en vivo ─────────────────────────────────────────────────────
+//
+// El iframe carga /premiere-preview/subtitulos (una página aparte de la web,
+// ver ese archivo) y le manda las líneas + el estilo elegido por
+// postMessage. Cambiar de estilo en #estiloSelect NO vuelve a llamar al
+// servidor: solo reenvía el mismo mensaje con el estiloId nuevo, y
+// @remotion/player repinta en el propio navegador del panel. El render
+// pesado (con canal alfa) solo se dispara al pulsar "Generar archivo final".
+var previewListo = false;
+
+function mandarDatosAlPreview() {
+  if (!estado.lineas || !previewListo) return;
+  var frame = $("#previewFrame");
+  if (!frame.contentWindow) return;
+  frame.contentWindow.postMessage(
+    { type: "scc-datos", lineas: estado.lineas, estiloId: $("#estiloSelect").value },
+    API
+  );
+}
+
+window.addEventListener("message", function (e) {
+  if (e.data && e.data.type === "scc-preview-listo") {
+    previewListo = true;
+    mandarDatosAlPreview();
+  }
+});
+
+$("#estiloSelect").onchange = function () {
+  mandarDatosAlPreview();
+};
+
+$("#transcribirBtn").onclick = function () {
+  if (!estado.archivoElegido) return;
+  var claves = clavesElegidas();
+
+  $("#transcribirBtn").disabled = true;
+  $("#previewBloque").classList.add("oculto");
   $("#transcribirResultado").classList.add("oculto");
   decir("Transcribiendo " + estado.archivoElegido.nombre + "…");
 
@@ -511,13 +549,52 @@ $("#generarBtn").onclick = function () {
     })
     .then(function (t) {
       estado.transcripcion = t;
-      decir("Transcrito (" + t.palabras.length + " palabras). Generando el vídeo…");
-      return fetch(API + "/api/ai/subtitulos/render", {
+      decir("Transcrito (" + t.palabras.length + " palabras). Agrupando líneas…");
+      return fetch(API + "/api/ai/subtitulos/preparar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcriptPath: t.filePath, estiloId: estiloId, claves: claves }),
+        body: JSON.stringify({ transcriptPath: t.filePath, claves: claves }),
       });
     })
+    .then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) throw new Error(j.error || "Fallo al agrupar la transcripción.");
+        return j;
+      });
+    })
+    .then(function (l) {
+      estado.lineas = l.lineas;
+      previewListo = false;
+      $("#previewBloque").classList.remove("oculto");
+      // Recargar el iframe (en vez de reenviar sobre uno ya cargado) evita
+      // arrastrar el estado de un preview anterior si se transcribe un
+      // segundo clip sin recargar el panel entero. El "?t=" fuerza la
+      // recarga aunque la URL base ya fuera la misma de antes.
+      $("#previewFrame").src = API + "/premiere-preview/subtitulos?t=" + Date.now();
+      decir(l.lineas.length + " línea(s) — elige estilo y pulsa generar cuando estés conforme.", "ok");
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    })
+    .finally(function () {
+      $("#transcribirBtn").disabled = false;
+    });
+};
+
+$("#generarBtn").onclick = function () {
+  if (!estado.transcripcion || !estado.archivoElegido) return;
+  var claves = clavesElegidas();
+  var estiloId = $("#estiloSelect").value;
+
+  $("#generarBtn").disabled = true;
+  $("#transcribirResultado").classList.add("oculto");
+  decir("Generando el vídeo final (con canal alfa)…");
+
+  fetch(API + "/api/ai/subtitulos/render", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ transcriptPath: estado.transcripcion.filePath, estiloId: estiloId, claves: claves }),
+  })
     .then(function (r) {
       return r.json().then(function (j) {
         if (!r.ok) throw new Error(j.error || "Fallo al renderizar.");

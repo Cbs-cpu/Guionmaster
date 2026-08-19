@@ -66,9 +66,13 @@ const Palabra: React.FC<{ texto: string; retardo: number; clave?: boolean; estil
   //   - "caja-clave" / "bloque-todas": el bloque de acento va detrás, y el
   //     texto necesita el color de CONTRASTE con ese bloque, no el de acento
   //     (texto amarillo sobre bloque amarillo sería invisible).
+  // Con "simple" o "subrayado" no hay relleno de color detrás de la palabra
+  // clave, así que el texto usa el color de acento directamente. Solo
+  // "colorSobreAcento" (pensado para contrastar con un relleno) se usa si
+  // algún día vuelve a existir un envoltorio de caja sólida.
   const color = !clave
     ? estilo.colorTexto
-    : estilo.tratamientoPalabra === "simple"
+    : estilo.tratamientoPalabra === "simple" || estilo.envoltorioPalabra !== "caja"
       ? estilo.colorAcento
       : estilo.colorSobreAcento;
 
@@ -120,6 +124,7 @@ const Bloque: React.FC<{
   const escala = interpolate(p, [0, 1], [0.5, 1], { extrapolateRight: "extend" });
 
   const esGlow = estilo.tratamientoTexto === "glow";
+  const esSubrayado = !esGlow && estilo.envoltorioPalabra !== "caja";
   const colorBloque = acentuado ? estilo.colorAcento : estilo.colorBloqueBase ?? estilo.colorAcento;
 
   return (
@@ -127,12 +132,13 @@ const Bloque: React.FC<{
       style={{
         position: "relative",
         display: "inline-block",
-        padding: "0.08em 0.22em",
+        padding: esSubrayado ? "0.08em 0.05em 0.14em" : "0.08em 0.22em",
         margin: "0 0.06em",
-        borderRadius: "0.1em",
-        backgroundColor: esGlow ? "transparent" : colorBloque,
+        borderRadius: esSubrayado ? 0 : "0.1em",
+        backgroundColor: esGlow || esSubrayado ? "transparent" : colorBloque,
         border: esGlow ? `2px solid ${estilo.colorAcento}` : undefined,
-        boxShadow: esGlow ? `0 0 22px ${estilo.colorAcento}` : "0 6px 18px rgba(0,0,0,0.35)",
+        borderBottom: esSubrayado ? `0.1em solid ${colorBloque}` : undefined,
+        boxShadow: esGlow ? `0 0 22px ${estilo.colorAcento}` : undefined,
         transform: `scale(${escala})`,
         opacity: interpolate(p, [0, 0.25], [0, 1], { extrapolateRight: "clamp" }),
       }}

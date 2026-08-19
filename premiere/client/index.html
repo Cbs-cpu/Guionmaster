@@ -72,15 +72,23 @@
         <label for="clavesInput">Palabras clave (separadas por coma)</label>
         <input id="clavesInput" type="text" placeholder="ej: sistema, recursos" />
 
-        <label for="estiloSelect">Estilo</label>
-        <select id="estiloSelect">
-          <option value="modula">Modula — contorno + caja, el más enérgico</option>
-          <option value="minimal">Minimal — sin caja, solo cambia de color</option>
-          <option value="bloques">Bloques — una etiqueta por palabra</option>
-          <option value="glow">Glow — resplandor en vez de contorno</option>
-        </select>
+        <button id="transcribirBtn" class="btn primario ancho" disabled>Transcribir</button>
 
-        <button id="generarBtn" class="btn primario ancho" disabled>Transcribir y generar</button>
+        <div id="previewBloque" class="preview-bloque oculto">
+          <label for="estiloSelect">Estilo — cambia al instante, sin volver a renderizar</label>
+          <select id="estiloSelect">
+            <option value="modula">Modula — contorno duro, el más enérgico</option>
+            <option value="minimal">Minimal — sin contorno, solo cambia de color</option>
+            <option value="bloques">Bloques — subrayado por palabra</option>
+            <option value="glow">Glow — resplandor en vez de contorno</option>
+          </select>
+
+          <iframe id="previewFrame" class="preview-frame" src="about:blank"></iframe>
+
+          <button id="generarBtn" class="btn primario ancho">
+            Generar archivo final (con canal alfa)
+          </button>
+        </div>
 
         <div id="transcribirResultado" class="resultado oculto">
           <video id="resultadoPreview" muted loop autoplay playsinline></video>

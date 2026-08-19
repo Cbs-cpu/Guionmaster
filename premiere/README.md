@@ -64,16 +64,25 @@ Dos vistas, arriba del todo:
    ffmpeg). Este camino no inserta solo — no viene de ningún sitio del
    timeline del que tenga sentido "una pista por encima" — así que el
    resultado se importa o inserta a mano con los botones de siempre.
-3. **Palabras clave**: las que quieres que salgan resaltadas (el tratamiento
-   depende del estilo — caja sólida, cambio de color, bloque…).
-4. **Estilo**: Modula, Minimal, Bloques o Glow — mismo catálogo que
-   `remotion/scenes/subtitulos/estilos.ts`.
-5. **Transcribir y generar** hace las dos llamadas seguidas (transcribir,
-   luego renderizar) y tarda: la transcripción es rápida, el render no —
-   depende de cuánto dure el audio. El botón se reactiva solo al terminar.
-6. El resultado se previsualiza ahí mismo (el `.mp4` con fondo); el archivo
-   real que se monta o se inserta es el `.mov` con canal alfa, no el de la
-   previsualización.
+3. **Palabras clave**: las que quieres que salgan resaltadas (color de
+   acento, contorno o subrayado según el estilo — ningún estilo pinta ya una
+   caja sólida sobre el vídeo, ver `remotion/scenes/subtitulos/estilos.ts`).
+4. **Transcribir**: llama a Whisper y agrupa el resultado en líneas
+   (`/api/ai/subtitulos/preparar`, JavaScript puro, no toca Remotion —
+   responde en milisegundos). En cuanto termina aparece el bloque de
+   **preview en vivo**.
+5. **Preview en vivo**: el selector de **Estilo** (Modula, Minimal, Bloques,
+   Glow) repinta el vídeo dentro del panel al instante — es
+   `@remotion/player` corriendo en el propio navegador del panel
+   (`/premiere-preview/subtitulos`), no una llamada al servidor. Prueba los
+   cuatro estilos sin esperar nada; el fondo de ajedrez del preview solo
+   representa el canal alfa, no forma parte del archivo real.
+6. **Generar archivo final**: aquí sí se dispara el render de verdad
+   (Chromium + ffmpeg) para el estilo que hayas dejado elegido — el `.mp4`
+   de previsualización y el `.mov` con canal alfa se renderizan en paralelo,
+   no en serie, así que tarda aproximadamente lo que tarda el más lento de
+   los dos, no la suma. El archivo real que se monta o se inserta es el
+   `.mov`, no el `.mp4` de la previsualización.
 
 ### Ajustes (⚙)
 

@@ -72,27 +72,34 @@ const composition = await selectComposition({
   inputProps: { lineas, estiloId, fondoPreview: true },
 });
 
-await renderMedia({
-  composition,
-  serveUrl,
-  codec: "h264",
-  crf: 18,
-  outputLocation: previewAbs,
-  inputProps: { lineas, estiloId, fondoPreview: true },
-  onProgress: () => {},
-});
-
-await renderMedia({
-  composition,
-  serveUrl,
-  codec: "prores",
-  proResProfile: "4444",
-  pixelFormat: "yuva444p10le",
-  imageFormat: "png",
-  outputLocation: overlayAbs,
-  inputProps: { lineas, estiloId, fondoPreview: false },
-  onProgress: () => {},
-});
+// Preview (.mp4) y overlay (.mov con alfa) son dos codificaciones
+// independientes del mismo bundle/composición ya resueltos arriba — no hay
+// ninguna dependencia entre ellas, así que corren en paralelo en vez de en
+// serie. Cada una abre su propia instancia de Chromium por debajo
+// (@remotion/renderer se encarga de eso), así que el coste no es 2x tiempo
+// de CPU, es 2x tiempo en paralelo ≈ el tiempo de la más lenta de las dos.
+await Promise.all([
+  renderMedia({
+    composition,
+    serveUrl,
+    codec: "h264",
+    crf: 18,
+    outputLocation: previewAbs,
+    inputProps: { lineas, estiloId, fondoPreview: true },
+    onProgress: () => {},
+  }),
+  renderMedia({
+    composition,
+    serveUrl,
+    codec: "prores",
+    proResProfile: "4444",
+    pixelFormat: "yuva444p10le",
+    imageFormat: "png",
+    outputLocation: overlayAbs,
+    inputProps: { lineas, estiloId, fondoPreview: false },
+    onProgress: () => {},
+  }),
+]);
 
 // Única línea de salida, para que el proceso que invoca esto (la ruta de la
 // API) no tenga que separar logs de progreso del resultado real.

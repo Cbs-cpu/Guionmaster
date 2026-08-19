@@ -3,16 +3,18 @@
 // Los cuatro comparten motor (mismo componente Palabra, mismos datos de
 // transcripción) pero difieren en tratamiento — no es un cambio de color por
 // encima del mismo dibujo, cada uno resuelve "cómo se lee una palabra que
-// llega" de una forma distinta:
+// llega" de una forma distinta. NINGUNO pinta ya una caja sólida sobre el
+// plano — el requisito es "solo las letras": el acento se marca con color,
+// contorno, resplandor o un subrayado fino, nunca tapando vídeo detrás.
 //
-//   - modula   → la identidad de marca: contorno duro, rebote marcado, caja
-//                sólida amarilla en la palabra clave. El más "hormonas".
-//   - minimal  → sin contorno ni caja, solo sombra suave y un fundido con
-//                subida corta. Para cuando el texto no puede competir con el
-//                plano — entrevistas, voces en off sobre imagen ya cargada.
-//   - bloques  → CADA palabra (no solo la clave) va sobre su propio bloque de
-//                color, estilo etiqueta apilada — el look "captions de
-//                TikTok" llevado a la identidad de Modula.
+//   - modula   → la identidad de marca: contorno duro, rebote marcado, la
+//                palabra clave cambia a amarillo. El más "hormonas".
+//   - minimal  → sin contorno, solo sombra suave y un fundido con subida
+//                corta. Para cuando el texto no puede competir con el plano
+//                — entrevistas, voces en off sobre imagen ya cargada.
+//   - bloques  → CADA palabra (no solo la clave) lleva su propio subrayado,
+//                estilo etiqueta apilada sin relleno — el ritmo "captions de
+//                TikTok" sin tapar el vídeo.
 //   - glow     → hermano del fondo oscuro+verde de scenes/glow/: sin
 //                contorno, con resplandor de color en vez de trazo, entrada
 //                blanda sin rebote.
@@ -20,6 +22,15 @@
 export type TratamientoTexto = "contorno" | "sombra-suave" | "glow";
 export type TratamientoPalabra = "simple" | "bloque-todas" | "caja-clave";
 export type TipoMuelle = "punch" | "posado";
+/**
+ * Cómo se marca una palabra que lleva `tratamientoPalabra` distinto de
+ * "simple": "caja" pinta un relleno sólido detrás (el look "pastilla"),
+ * "subrayado" solo traza una línea bajo la palabra — mismo agrupado visual
+ * por palabra, sin tapar nada del plano detrás. Los cuatro estilos del
+ * catálogo usan "subrayado" o ninguno: ningún estilo pinta ya una caja
+ * sólida sobre el vídeo.
+ */
+export type EnvoltorioPalabra = "caja" | "subrayado";
 
 export interface EstiloSubtitulos {
   id: string;
@@ -31,10 +42,12 @@ export interface EstiloSubtitulos {
   /** Texto cuando va sobre un bloque/caja de color (necesita contraste con `colorAcento`). */
   colorSobreAcento: string;
   colorAcento: string;
-  /** Solo lo usa "bloque-todas": el color de los bloques que NO son la palabra clave. */
+  /** Solo lo usa "bloque-todas": el color de la marca (caja o subrayado) que NO es la palabra clave. */
   colorBloqueBase?: string;
   tratamientoTexto: TratamientoTexto;
   tratamientoPalabra: TratamientoPalabra;
+  /** Solo importa si `tratamientoPalabra` no es "simple". Por defecto "subrayado". */
+  envoltorioPalabra?: EnvoltorioPalabra;
   muelle: TipoMuelle;
   aberracionCromatica: boolean;
   rotacion: boolean;
@@ -47,14 +60,14 @@ export const ESTILOS: EstiloSubtitulos[] = [
     id: "modula",
     nombre: "Modula",
     descripcion:
-      "Blanco y amarillo de marca. Contorno duro, rebote marcado, caja sólida en la palabra clave. El más enérgico de los cuatro.",
+      "Blanco y amarillo de marca. Contorno duro, rebote marcado, la palabra clave pasa a amarillo — sin caja detrás. El más enérgico de los cuatro.",
     fontWeight: 800,
     fontSizeBase: 64,
     colorTexto: "#FAFAFA",
     colorSobreAcento: "#141414",
     colorAcento: "#FFC300",
     tratamientoTexto: "contorno",
-    tratamientoPalabra: "caja-clave",
+    tratamientoPalabra: "simple",
     muelle: "punch",
     aberracionCromatica: true,
     rotacion: true,
@@ -81,15 +94,16 @@ export const ESTILOS: EstiloSubtitulos[] = [
     id: "bloques",
     nombre: "Bloques",
     descripcion:
-      "Cada palabra sobre su propio bloque de color — etiquetas apiladas, no solo la clave. El look de captions cortas de reels.",
+      "Cada palabra lleva su propio subrayado — etiquetas apiladas, no solo la clave, pero sin relleno que tape el vídeo. El look de captions cortas de reels.",
     fontWeight: 800,
     fontSizeBase: 56,
     colorTexto: "#FAFAFA",
     colorSobreAcento: "#141414",
     colorAcento: "#FFC300",
-    colorBloqueBase: "#242424",
+    colorBloqueBase: "rgba(250,250,250,0.55)",
     tratamientoTexto: "contorno",
     tratamientoPalabra: "bloque-todas",
+    envoltorioPalabra: "subrayado",
     muelle: "punch",
     aberracionCromatica: false,
     rotacion: true,
