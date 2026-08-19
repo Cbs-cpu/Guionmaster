@@ -16,7 +16,10 @@
  *     respuesta JSON que devuelve host/index.jsx.
  */
 
-var API = "http://localhost:3000";
+// Se recuerda en localStorage (persiste entre sesiones del panel, es
+// Chromium normal) para no tener que reconfigurar cada vez que se abre
+// Premiere. Por defecto, el servidor local — es el caso más común.
+var API = localStorage.getItem("scc_api_url") || "http://localhost:3000";
 var cs = new CSInterface();
 
 var estado = {
@@ -25,6 +28,10 @@ var estado = {
   recursos: [],
   categoriaActiva: null,
   pistas: 0,
+  vista: "recursos",
+  archivoElegido: null, // { ruta, nombre }
+  transcripcion: null, // { filePath, palabras }
+  generado: null, // { previewPath, filePath }
 };
 
 // ── Categorías ───────────────────────────────────────────────────────────
@@ -368,6 +375,156 @@ function refrescarPistas() {
       pintarPistas();
     });
 }
+
+// ── Ajustes (servidor local o remoto) ───────────────────────────────────
+
+function pintarAjustes() {
+  var preset = $("#apiPreset");
+  var input = $("#apiUrl");
+  var coincide = false;
+  for (var i = 0; i < preset.options.length; i++) {
+    if (preset.options[i].value === API) {
+      coincide = true;
+      break;
+    }
+  }
+  preset.value = coincide ? API : "custom";
+  input.value = API;
+  input.classList.toggle("oculto", coincide);
+}
+
+function fijarApi(url) {
+  if (!url || url === API) return;
+  API = url.replace(/\/+$/, "");
+  localStorage.setItem("scc_api_url", API);
+  cargar();
+  refrescarPistas();
+}
+
+$("#ajustesBtn").onclick = function () {
+  var panel = $("#ajustes");
+  panel.classList.toggle("oculto");
+  $("#ajustesBtn").classList.toggle("activo", !panel.classList.contains("oculto"));
+};
+$("#apiPreset").onchange = function () {
+  var v = this.value;
+  $("#apiUrl").classList.toggle("oculto", v !== "custom");
+  if (v !== "custom") fijarApi(v);
+};
+$("#apiUrl").onchange = function () {
+  fijarApi(this.value.trim());
+};
+pintarAjustes();
+
+// ── Vistas (Recursos / Transcribir) ─────────────────────────────────────
+
+var botonesVista = document.querySelectorAll(".vista-btn");
+for (var vi = 0; vi < botonesVista.length; vi++) {
+  botonesVista[vi].onclick = function () {
+    estado.vista = this.getAttribute("data-vista");
+    for (var j = 0; j < botonesVista.length; j++) {
+      botonesVista[j].classList.toggle("activa", botonesVista[j] === this);
+    }
+    $("#vistaRecursos").classList.toggle("oculto", estado.vista !== "recursos");
+    $("#vistaTranscribir").classList.toggle("oculto", estado.vista !== "transcribir");
+  };
+}
+
+// ── Transcribir ──────────────────────────────────────────────────────────
+//
+// Tres pasos encadenados, cada uno habilita el siguiente: elegir archivo →
+// transcribir (llama a /api/ai/subtitulos/transcribir con la ruta local,
+// el servidor lee el archivo él mismo) → generar (agrupa en líneas y
+// renderiza con el estilo elegido, /api/ai/subtitulos/render). El botón
+// "Transcribir y generar" hace los dos últimos pasos de una vez porque
+// separarlos en dos clics no aporta nada — nadie transcribe sin intención
+// de generar el subtítulo.
+
+$("#elegirArchivo").onclick = function () {
+  llamarHost("sccElegirArchivo", [])
+    .then(function (d) {
+      if (!d.ruta) return; // cancelado
+      estado.archivoElegido = { ruta: d.ruta, nombre: d.nombre };
+      $("#archivoElegido").textContent = d.nombre;
+      $("#generarBtn").disabled = false;
+      $("#transcribirResultado").classList.add("oculto");
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    });
+};
+
+function subirBase(nombre) {
+  // El nombre del archivo local va tal cual a la API — es solo para que
+  // Whisper sepa la extensión, no se usa como ruta.
+  return nombre;
+}
+
+$("#generarBtn").onclick = function () {
+  if (!estado.archivoElegido) return;
+  var claves = $("#clavesInput")
+    .value.split(",")
+    .map(function (s) {
+      return s.trim();
+    })
+    .filter(Boolean);
+  var estiloId = $("#estiloSelect").value;
+
+  $("#generarBtn").disabled = true;
+  $("#transcribirResultado").classList.add("oculto");
+  decir("Transcribiendo " + estado.archivoElegido.nombre + "…");
+
+  fetch(API + "/api/ai/subtitulos/transcribir", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      fileName: subirBase(estado.archivoElegido.nombre),
+      localPath: estado.archivoElegido.ruta,
+    }),
+  })
+    .then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) throw new Error(j.error || "Fallo al transcribir.");
+        return j;
+      });
+    })
+    .then(function (t) {
+      estado.transcripcion = t;
+      decir("Transcrito (" + t.palabras.length + " palabras). Generando el vídeo…");
+      return fetch(API + "/api/ai/subtitulos/render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcriptPath: t.filePath, estiloId: estiloId, claves: claves }),
+      });
+    })
+    .then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) throw new Error(j.error || "Fallo al renderizar.");
+        return j;
+      });
+    })
+    .then(function (res) {
+      estado.generado = res;
+      $("#resultadoPreview").src = API + "/api/media/" + res.previewPath;
+      $("#transcribirResultado").classList.remove("oculto");
+      decir(res.lineas + " línea(s) generadas", "ok");
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    })
+    .finally(function () {
+      $("#generarBtn").disabled = false;
+    });
+};
+
+$("#resultadoImportar").onclick = function () {
+  if (!estado.generado) return;
+  importar([{ filePath: estado.generado.filePath }]);
+};
+$("#resultadoInsertar").onclick = function () {
+  if (!estado.generado) return;
+  insertar({ filePath: estado.generado.filePath });
+};
 
 // ── Arranque ─────────────────────────────────────────────────────────────
 

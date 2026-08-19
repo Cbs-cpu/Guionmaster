@@ -191,3 +191,27 @@ function sccPistas() {
     return respuesta(false, null, e.toString());
   }
 }
+
+/**
+ * Diálogo nativo de "abrir archivo", para el flujo de Transcribir.
+ *
+ * El panel es Chromium normal y un `<input type=file>` en algunas versiones
+ * de CEF no expone la ruta absoluta del archivo elegido (por seguridad del
+ * propio navegador) — File.openDialog() de ExtendScript sí la da siempre,
+ * porque corre dentro de Premiere, no dentro del panel.
+ *
+ * Devuelve `{"ruta": null}` si el usuario cancela, no un error: cancelar no
+ * es un fallo, es una respuesta válida.
+ */
+function sccElegirArchivo() {
+  try {
+    var filtro = "Audio o vídeo:*.mp4;*.mov;*.mp3;*.wav;*.m4a;*.aac;*.webm";
+    var archivo = File.openDialog("Elige el audio o vídeo a transcribir", filtro, false);
+    if (!archivo) {
+      return respuesta(true, '{"ruta":null}');
+    }
+    return respuesta(true, '{"ruta":"' + escapar(archivo.fsName) + '","nombre":"' + escapar(archivo.name) + '"}');
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}

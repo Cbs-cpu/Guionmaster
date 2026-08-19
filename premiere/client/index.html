@@ -11,24 +11,83 @@
         <span class="punto"></span>
         <span>System Content Studio</span>
       </div>
-      <button id="recargar" class="icono" title="Volver a leer los recursos">↻</button>
+      <div class="cabecera-acciones">
+        <button id="ajustesBtn" class="icono" title="Servidor: local o remoto">⚙</button>
+        <button id="recargar" class="icono" title="Volver a leer los recursos">↻</button>
+      </div>
     </header>
+
+    <!-- Servidor al que habla el panel. Oculto por defecto: casi nunca hace
+         falta tocarlo, así que no compite por espacio con lo que sí se usa
+         cada vez. -->
+    <div id="ajustes" class="ajustes oculto">
+      <label for="apiUrl">Servidor</label>
+      <div class="ajustes-fila">
+        <select id="apiPreset">
+          <option value="http://localhost:3000">Local (npm run dev)</option>
+          <option value="http://100.94.61.89:3100">Servidor (Tailscale)</option>
+          <option value="custom">Otra…</option>
+        </select>
+        <input id="apiUrl" type="text" placeholder="http://…" />
+      </div>
+    </div>
 
     <!-- Estado de conexión con la app Next. Es lo primero que se ve porque
          es el fallo más probable: el panel no sirve de nada si el servidor
-         (npm run dev) no está levantado. -->
+         no está levantado o apunta al sitio equivocado. -->
     <div id="conexion" class="aviso oculto"></div>
 
-    <div class="destino">
-      <label for="pista">Insertar en</label>
-      <select id="pista"></select>
-    </div>
+    <nav class="vistas">
+      <button class="vista-btn activa" data-vista="recursos">Recursos</button>
+      <button class="vista-btn" data-vista="transcribir">Transcribir</button>
+    </nav>
 
-    <nav class="pestanas" id="pestanas"></nav>
+    <section id="vistaRecursos" class="vista">
+      <div class="destino">
+        <label for="pista">Insertar en</label>
+        <select id="pista"></select>
+      </div>
 
-    <main id="lista" class="lista">
-      <p class="vacio">Cargando recursos…</p>
-    </main>
+      <nav class="pestanas" id="pestanas"></nav>
+
+      <main id="lista" class="lista">
+        <p class="vacio">Cargando recursos…</p>
+      </main>
+    </section>
+
+    <section id="vistaTranscribir" class="vista oculto">
+      <div class="transcribir">
+        <p class="ayuda">
+          Elige un archivo de audio o vídeo, márcale las palabras que no se pueden perder y genera el
+          subtítulo animado — el mismo motor que las animaciones, con canal alfa listo para una pista de
+          Premiere.
+        </p>
+
+        <button id="elegirArchivo" class="btn ancho">Elegir archivo…</button>
+        <p id="archivoElegido" class="archivo-elegido"></p>
+
+        <label for="clavesInput">Palabras clave (separadas por coma)</label>
+        <input id="clavesInput" type="text" placeholder="ej: sistema, recursos" />
+
+        <label for="estiloSelect">Estilo</label>
+        <select id="estiloSelect">
+          <option value="modula">Modula — contorno + caja, el más enérgico</option>
+          <option value="minimal">Minimal — sin caja, solo cambia de color</option>
+          <option value="bloques">Bloques — una etiqueta por palabra</option>
+          <option value="glow">Glow — resplandor en vez de contorno</option>
+        </select>
+
+        <button id="generarBtn" class="btn primario ancho" disabled>Transcribir y generar</button>
+
+        <div id="transcribirResultado" class="resultado oculto">
+          <video id="resultadoPreview" muted loop autoplay playsinline></video>
+          <div class="resultado-acciones">
+            <button id="resultadoImportar" class="btn">Importar</button>
+            <button id="resultadoInsertar" class="btn primario">Insertar</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <footer id="estado" class="estado"></footer>
 

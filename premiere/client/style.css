@@ -57,6 +57,11 @@ body {
   flex-shrink: 0;
 }
 
+.cabecera-acciones {
+  display: flex;
+  gap: 4px;
+}
+
 .icono {
   background: none;
   border: 1px solid var(--borde);
@@ -70,6 +75,74 @@ body {
 .icono:hover {
   color: var(--texto);
   border-color: var(--texto-faint);
+}
+.icono.activo {
+  color: var(--acento);
+  border-color: var(--acento);
+}
+
+.ajustes {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--borde);
+  flex-shrink: 0;
+}
+.ajustes label {
+  display: block;
+  color: var(--texto-suave);
+  font-size: 10.5px;
+  margin-bottom: 5px;
+}
+.ajustes-fila {
+  display: flex;
+  gap: 6px;
+}
+.ajustes select,
+.ajustes input {
+  background: var(--fondo-alto);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  padding: 4px 6px;
+  font-size: 11.5px;
+}
+.ajustes select {
+  flex: 1;
+}
+.ajustes input {
+  flex: 1;
+  min-width: 0;
+}
+
+.vistas {
+  display: flex;
+  gap: 2px;
+  padding: 8px 12px 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--borde);
+}
+.vista-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--texto-suave);
+  cursor: pointer;
+  padding: 6px 10px 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.vista-btn:hover {
+  color: var(--texto);
+}
+.vista-btn.activa {
+  color: var(--acento);
+  border-bottom-color: var(--acento);
+}
+
+.vista {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 
 .aviso {
@@ -249,4 +322,80 @@ body {
 }
 .estado.error {
   color: var(--error);
+}
+
+.transcribir {
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ayuda {
+  color: var(--texto-suave);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0 0 2px;
+}
+
+.transcribir label {
+  color: var(--texto-suave);
+  font-size: 10.5px;
+  margin-bottom: -4px;
+}
+
+.transcribir input,
+.transcribir select {
+  background: var(--fondo-alto);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-size: 12px;
+  width: 100%;
+}
+
+.archivo-elegido {
+  margin: -4px 0 2px;
+  color: var(--texto-faint);
+  font-size: 10.5px;
+  word-break: break-all;
+  line-height: 1.5;
+}
+.archivo-elegido:empty::before {
+  content: "Ningún archivo elegido todavía.";
+  font-style: italic;
+}
+
+.btn.ancho {
+  width: 100%;
+  text-align: center;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.resultado {
+  margin-top: 4px;
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #0b0d0b;
+}
+.resultado video {
+  width: 100%;
+  display: block;
+  aspect-ratio: 16 / 9;
+  background: #0b0d0b;
+  object-fit: contain;
+}
+.resultado-acciones {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid var(--borde);
+}
+.resultado-acciones .btn {
+  flex: 1;
+  text-align: center;
 }
