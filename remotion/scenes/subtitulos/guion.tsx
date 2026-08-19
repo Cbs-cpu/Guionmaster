@@ -24,27 +24,36 @@ interface Linea {
   tokens: Token[];
 }
 
+/**
+ * Divide una frase en tokens de una palabra cada uno, marcando como clave
+ * las que aparezcan en `claves`. Una transcripción real (Whisper) ya viene
+ * palabra a palabra — esto es solo para que el DEMO tenga la misma
+ * granularidad, porque el estilo "bloques" pone un bloque POR PALABRA: si
+ * aquí se pasara la frase entera como un único token, "bloques" pondría
+ * toda la frase en un solo bloque en vez de uno por palabra, y el resto de
+ * estilos perderían el escalonado palabra a palabra en todo menos la
+ * última palabra.
+ */
+function palabras(frase: string, claves: string[] = []): Token[] {
+  const clavesNorm = new Set(claves.map((c) => c.toUpperCase()));
+  return frase.split(" ").map((texto) => ({ texto, clave: clavesNorm.has(texto.toUpperCase()) }));
+}
+
 const LINEAS: Linea[] = [
   {
     inicio: 0,
     duracion: 72,
-    tokens: [
-      { texto: "casi nunca es un problema de" },
-      { texto: "RECURSOS", clave: true },
-    ],
+    tokens: palabras("casi nunca es un problema de RECURSOS", ["RECURSOS"]),
   },
   {
     inicio: 84,
     duracion: 68,
-    tokens: [{ texto: "es un problema de" }, { texto: "SISTEMA", clave: true }],
+    tokens: palabras("es un problema de SISTEMA", ["SISTEMA"]),
   },
   {
     inicio: 164,
     duracion: 76,
-    tokens: [
-      { texto: "un sistema mejor diseñado" },
-      { texto: "RINDE MÁS", clave: true },
-    ],
+    tokens: palabras("un sistema mejor diseñado RINDE MÁS", ["RINDE", "MÁS"]),
   },
 ];
 

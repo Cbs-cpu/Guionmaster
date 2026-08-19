@@ -7,8 +7,12 @@ import { glow } from "./scenes/glow/estilo";
 import { DURACION_TOTAL as REEL_DURACION, ReelLimpio } from "./scenes/reel/guion";
 import { reel } from "./scenes/reel/estilo";
 import { Showreel } from "./scenes/reel/Showreel";
-import { ESTILOS } from "./scenes/subtitulos/estilos";
-import { DURACION_SUBTITULOS_DEMO, SubtitulosDemo } from "./scenes/subtitulos/guion";
+import { ESTILO_POR_DEFECTO, ESTILOS } from "./scenes/subtitulos/estilos";
+import {
+  DURACION_SUBTITULOS_DEMO,
+  SubtitulosDemo,
+  SubtitulosTranscripcion,
+} from "./scenes/subtitulos/guion";
 import { subtitulos } from "./scenes/subtitulos/estilo";
 
 // Catálogo de composiciones del estudio.
@@ -112,6 +116,28 @@ export const RemotionRoot: React.FC = () => {
           />
         </React.Fragment>
       ))}
+
+      {/* Composición dinámica: la usa /api/ai/subtitulos/render con una
+          transcripción real (líneas ya agrupadas por src/lib/subtitulos/
+          agrupar.ts) en vez del demo hardcodeado. `durationInFrames` no se
+          fija aquí — depende de cuánto dure la transcripción, así que se
+          calcula con `calculateMetadata` a partir de la última línea. */}
+      <Composition
+        id="subtitulos-transcripcion"
+        component={SubtitulosTranscripcion}
+        defaultProps={{ lineas: [], estiloId: ESTILO_POR_DEFECTO, fondoPreview: true }}
+        fps={subtitulos.canvas.fps}
+        width={subtitulos.canvas.width}
+        height={subtitulos.canvas.height}
+        calculateMetadata={({ props }) => {
+          const lineas = (props.lineas as { inicio: number; duracion: number }[]) ?? [];
+          const ultima = lineas[lineas.length - 1];
+          // +30 fotogramas (1s) de margen tras la última línea, para que el
+          // clip no corte a cuchillo justo cuando la línea final desaparece.
+          const duracion = ultima ? ultima.inicio + ultima.duracion + 30 : 90;
+          return { durationInFrames: Math.max(30, duracion) };
+        }}
+      />
     </>
   );
 };

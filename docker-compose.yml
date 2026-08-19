@@ -1,0 +1,31 @@
+# Despliegue de System Content Studio, aislado del resto de servicios del
+# servidor (no toca /srv/modula ni /srv/clientes, ni la red de sus
+# contenedores).
+#
+# El puerto se publica en la IP de Tailscale del servidor, no en 0.0.0.0: es
+# el mismo patrón que ya usan los demás contenedores de esta máquina
+# (modula-nginx expone 100.94.61.89:8069) — así la app queda alcanzable
+# desde tus propios dispositivos en la tailnet, pero no desde el internet
+# público. Si algún día hace falta acceso público de verdad, eso se hace con
+# un subdominio + nginx + TLS delante, no cambiando este bind a 0.0.0.0.
+services:
+  studio:
+    build: .
+    container_name: guionmaster-studio
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${BIND_IP:-100.94.61.89}:${BIND_PORT:-3100}:3000"
+    volumes:
+      # Único estado que sobrevive a un redeploy: la base SQLite y todo lo
+      # generado (animaciones, imágenes, transcripciones). Bind mount, no
+      # volumen anónimo, para poder hacer backup con un simple rsync/tar
+      # desde fuera de Docker.
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/db/state', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

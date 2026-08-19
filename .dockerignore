@@ -1,0 +1,9 @@
+node_modules
+.next
+data
+.env*
+.git
+*.tsbuildinfo
+premiere/client/lib/cep-bridge.js.map
+.claude
+.vscode
