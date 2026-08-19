@@ -51,19 +51,29 @@ Dos vistas, arriba del todo:
 
 ### Transcribir
 
-1. **Elegir archivo…** abre el selector nativo de Windows (audio o vídeo,
-   hasta 25 MB — es el límite de la API de transcripción; si el vídeo pesa
-   más, extrae solo el audio antes con ffmpeg).
-2. **Palabras clave**: las que quieres que salgan resaltadas (el tratamiento
+1. **Usar el clip bajo el cursor** — la opción normal: coge el clip de vídeo
+   que hay justo donde tengas el cursor de reproducción en la secuencia
+   activa (mirando las pistas de abajo arriba, V1 primero). Si quieres
+   transcribir otro clip, mueve el cursor sobre él y vuelve a pulsar. Al
+   generar el subtítulo, **se inserta él solo una pista por encima del
+   origen** — no hace falta arrastrarlo. Si no hay pista libre encima, se
+   avisa en vez de tapar algo que ya estuviera ahí.
+2. **O elegir un archivo…** — el selector nativo de Windows, para transcribir
+   algo que no está en el timeline (hasta 25 MB, el límite de la API de
+   transcripción; si el vídeo pesa más, extrae solo el audio antes con
+   ffmpeg). Este camino no inserta solo — no viene de ningún sitio del
+   timeline del que tenga sentido "una pista por encima" — así que el
+   resultado se importa o inserta a mano con los botones de siempre.
+3. **Palabras clave**: las que quieres que salgan resaltadas (el tratamiento
    depende del estilo — caja sólida, cambio de color, bloque…).
-3. **Estilo**: Modula, Minimal, Bloques o Glow — mismo catálogo que
+4. **Estilo**: Modula, Minimal, Bloques o Glow — mismo catálogo que
    `remotion/scenes/subtitulos/estilos.ts`.
-4. **Transcribir y generar** hace las dos llamadas seguidas (transcribir,
+5. **Transcribir y generar** hace las dos llamadas seguidas (transcribir,
    luego renderizar) y tarda: la transcripción es rápida, el render no —
    depende de cuánto dure el audio. El botón se reactiva solo al terminar.
-5. El resultado se previsualiza ahí mismo (el `.mp4` con fondo) y se importa
-   o inserta con los mismos botones de siempre; el archivo real que se monta
-   es el `.mov` con canal alfa, no el de la previsualización.
+6. El resultado se previsualiza ahí mismo (el `.mp4` con fondo); el archivo
+   real que se monta o se inserta es el `.mov` con canal alfa, no el de la
+   previsualización.
 
 ### Ajustes (⚙)
 

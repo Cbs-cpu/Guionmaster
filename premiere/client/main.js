@@ -440,11 +440,32 @@ for (var vi = 0; vi < botonesVista.length; vi++) {
 // separarlos en dos clics no aporta nada — nadie transcribe sin intención
 // de generar el subtítulo.
 
+/**
+ * "El vídeo principal": el clip bajo el cursor de reproducción en la
+ * secuencia activa (host/sccClipPrincipal). Guarda también en qué pista
+ * estaba, porque es lo que decide dónde se inserta solo el resultado — una
+ * pista por encima, sin preguntar. `sccElegirArchivo` (un archivo suelto,
+ * sin relación con el timeline) nunca inserta solo: ahí no hay "una pista
+ * por encima de qué" que tenga sentido.
+ */
+$("#usarClipPrincipal").onclick = function () {
+  llamarHost("sccClipPrincipal", [])
+    .then(function (d) {
+      estado.archivoElegido = { ruta: d.ruta, nombre: d.nombre, pistaOrigen: d.pista, totalPistas: d.totalPistas };
+      $("#archivoElegido").textContent = d.nombre + " (pista V" + (d.pista + 1) + ")";
+      $("#generarBtn").disabled = false;
+      $("#transcribirResultado").classList.add("oculto");
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    });
+};
+
 $("#elegirArchivo").onclick = function () {
   llamarHost("sccElegirArchivo", [])
     .then(function (d) {
       if (!d.ruta) return; // cancelado
-      estado.archivoElegido = { ruta: d.ruta, nombre: d.nombre };
+      estado.archivoElegido = { ruta: d.ruta, nombre: d.nombre, pistaOrigen: null };
       $("#archivoElegido").textContent = d.nombre;
       $("#generarBtn").disabled = false;
       $("#transcribirResultado").classList.add("oculto");
@@ -507,7 +528,28 @@ $("#generarBtn").onclick = function () {
       estado.generado = res;
       $("#resultadoPreview").src = API + "/api/media/" + res.previewPath;
       $("#transcribirResultado").classList.remove("oculto");
-      decir(res.lineas + " línea(s) generadas", "ok");
+
+      // Solo se inserta solo cuando el origen fue "el clip bajo el cursor":
+      // ahí SÍ hay una pista de la que "una encima" tiene sentido. Un
+      // archivo suelto (elegido a mano) no viene de ningún sitio del
+      // timeline, así que se queda esperando el clic de Importar/Insertar
+      // como antes.
+      if (estado.archivoElegido && estado.archivoElegido.pistaOrigen != null) {
+        var origen = estado.archivoElegido;
+        var pistaDestino = Math.min(origen.pistaOrigen + 1, origen.totalPistas - 1);
+        var mismaQueOrigen = pistaDestino === origen.pistaOrigen;
+        decir(res.lineas + " línea(s) generadas — insertando en V" + (pistaDestino + 1) + "…");
+        insertarEnPista(estado.generado.filePath, pistaDestino).then(function () {
+          if (mismaQueOrigen) {
+            decir(
+              "Insertado en V" + (pistaDestino + 1) + " — no había pista libre encima, añade una si lo quieres como overlay.",
+              "ok"
+            );
+          }
+        });
+      } else {
+        decir(res.lineas + " línea(s) generadas", "ok");
+      }
     })
     .catch(function (e) {
       decir(e.message, "error");
@@ -516,6 +558,17 @@ $("#generarBtn").onclick = function () {
       $("#generarBtn").disabled = false;
     });
 };
+
+/** Inserta un archivo en una pista concreta sin pasar por el selector "Insertar en" de la vista Recursos. */
+function insertarEnPista(filePath, pista) {
+  return llamarHost("sccInsertarEnSecuencia", [rutaAbsoluta(filePath), pista])
+    .then(function (d) {
+      decir("“" + d.clip + "” insertado en V" + d.pista, "ok");
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    });
+}
 
 $("#resultadoImportar").onclick = function () {
   if (!estado.generado) return;

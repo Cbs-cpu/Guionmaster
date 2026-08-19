@@ -215,3 +215,58 @@ function sccElegirArchivo() {
     return respuesta(false, null, e.toString());
   }
 }
+
+/**
+ * El "vídeo principal": el clip que hay justo debajo del cursor de
+ * reproducción en la secuencia activa, mirando las pistas de vídeo de abajo
+ * arriba (V1 primero — es la base del montaje en casi cualquier proyecto,
+ * así que es la lectura más razonable de "el vídeo principal" sin pedirle
+ * nada al usuario). Si quiere transcribir OTRO clip, mueve el cursor sobre
+ * él y vuelve a pulsar: es la misma idea que "el que tú selecciones" pero
+ * sin depender de la selección de teclado/ratón en el Project panel, que
+ * ExtendScript no siempre puede leer de forma fiable entre versiones.
+ *
+ * Devuelve también la pista donde estaba, para que el panel pueda insertar
+ * el subtítulo generado una pista por encima sin preguntar.
+ */
+function sccClipPrincipal() {
+  try {
+    var sec = app.project.activeSequence;
+    if (!sec) {
+      return respuesta(false, null, "No hay ninguna secuencia activa. Abre una en el timeline.");
+    }
+    var ahora = sec.getPlayerPosition().seconds;
+
+    for (var t = 0; t < sec.videoTracks.numTracks; t++) {
+      var pista = sec.videoTracks[t];
+      for (var c = 0; c < pista.clips.numItems; c++) {
+        var clip = pista.clips[c];
+        if (ahora >= clip.start.seconds && ahora < clip.end.seconds) {
+          var item = clip.projectItem;
+          if (!item) continue;
+          var ruta = item.getMediaPath();
+          if (!ruta) continue;
+          return respuesta(
+            true,
+            '{"ruta":"' +
+              escapar(ruta) +
+              '","nombre":"' +
+              escapar(item.name) +
+              '","pista":' +
+              t +
+              ',"totalPistas":' +
+              sec.videoTracks.numTracks +
+              "}"
+          );
+        }
+      }
+    }
+    return respuesta(
+      false,
+      null,
+      "No hay ningún clip de vídeo bajo el cursor de reproducción. Mueve el cursor sobre el clip que quieres transcribir."
+    );
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}
