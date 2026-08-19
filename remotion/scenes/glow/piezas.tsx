@@ -37,7 +37,15 @@ export const FondoGlow: React.FC<{
   y?: number;
   /** Con anillo (halo) alrededor, como el plano del "sol" de la referencia. */
   anillo?: boolean;
-}> = ({ camara, x = 0.5, y = 0.42, anillo = false }) => {
+  /**
+   * Color del resplandor. Por defecto el verde de la identidad — se puede
+   * pasar otro (p. ej. rojo) sin tocar `estilo.ts`: es la paleta la que
+   * cambia entre piezas, nunca el motor (ver la nota de cabecera de
+   * `estilos.ts` en scenes/subtitulos/, misma regla aquí).
+   */
+  acento?: string;
+  acentoSuave?: string;
+}> = ({ camara, x = 0.5, y = 0.42, anillo = false, acento = glow.color.glow, acentoSuave = glow.color.glowSuave }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const PROF = 0.3;
@@ -57,7 +65,7 @@ export const FondoGlow: React.FC<{
           height: width * 0.46 * respiro,
           transform: "translate(-50%, -50%)",
           borderRadius: "50%",
-          background: `radial-gradient(circle, ${glow.color.glow} 0%, ${glow.color.glowSuave} 46%, transparent 72%)`,
+          background: `radial-gradient(circle, ${acento} 0%, ${acentoSuave} 46%, transparent 72%)`,
           filter: "blur(38px)",
           opacity: 0.85,
         }}
@@ -72,7 +80,7 @@ export const FondoGlow: React.FC<{
             height: width * 0.3,
             transform: "translate(-50%, -50%)",
             borderRadius: "50%",
-            border: `${width * 0.018}px solid ${glow.color.glow}`,
+            border: `${width * 0.018}px solid ${acento}`,
             filter: "blur(6px)",
             opacity: 0.55,
           }}
@@ -88,7 +96,7 @@ export const FondoGlow: React.FC<{
           height: width * 0.12,
           transform: "translate(-50%, -50%)",
           borderRadius: "50%",
-          background: `radial-gradient(circle, #FFFFFF 0%, ${glow.color.glow} 60%, transparent 100%)`,
+          background: `radial-gradient(circle, #FFFFFF 0%, ${acento} 60%, transparent 100%)`,
           filter: "blur(2px)",
           opacity: 0.9,
         }}
@@ -97,7 +105,7 @@ export const FondoGlow: React.FC<{
         style={{
           position: "absolute",
           inset: -height * 0.2,
-          background: `radial-gradient(ellipse at ${x * 100}% ${y * 100 + 20}%, rgba(111,239,160,0.06) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, ${glow.color.fondoProfundo} 0%, transparent 60%)`,
+          background: `radial-gradient(ellipse at ${x * 100}% ${y * 100 + 20}%, ${acentoSuave} 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, ${glow.color.fondoProfundo} 0%, transparent 60%)`,
         }}
       />
     </div>
@@ -205,7 +213,9 @@ export const Rotulo: React.FC<{
   tam?: number;
   retardo?: number;
   centrado?: boolean;
-}> = ({ antes, acento, despues, x, y, tam = 40, retardo = 0, centrado = true }) => {
+  /** Color de la palabra en serif itálica. Por defecto el verde de la identidad. */
+  colorAcento?: string;
+}> = ({ antes, acento, despues, x, y, tam = 40, retardo = 0, centrado = true, colorAcento }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const p = muelle(frame, fps, retardo, POSADO);
@@ -227,7 +237,7 @@ export const Rotulo: React.FC<{
       }}
     >
       {antes && <span style={glow.font.sans}>{antes} </span>}
-      <span style={{ ...glow.font.serifItalica, fontFamily: serif }}>{acento}</span>
+      <span style={{ ...glow.font.serifItalica, fontFamily: serif, color: colorAcento }}>{acento}</span>
       {despues && <span style={glow.font.sans}> {despues}</span>}
     </div>
   );

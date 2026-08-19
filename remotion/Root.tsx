@@ -3,6 +3,7 @@ import { Composition } from "remotion";
 import { ANIMACIONES, Animacion } from "./scenes/contexto/guion";
 import { contexto } from "./scenes/contexto/estilo";
 import { DURACION_DEMO as GLOW_DURACION, GlowDemo } from "./scenes/glow/guion";
+import { DURACION_KINETICO_DEMO, GlowKineticoDemo } from "./scenes/glow/kinetico";
 import { glow } from "./scenes/glow/estilo";
 import { DURACION_TOTAL as REEL_DURACION, ReelLimpio } from "./scenes/reel/guion";
 import { reel } from "./scenes/reel/estilo";
@@ -84,6 +85,18 @@ export const RemotionRoot: React.FC = () => {
         id="glow-demo"
         component={GlowDemo}
         durationInFrames={GLOW_DURACION}
+        fps={glow.canvas.fps}
+        width={glow.canvas.width}
+        height={glow.canvas.height}
+      />
+
+      {/* Variante kinética de "glow": frases cortas en secuencia, sin
+          tarjeta de interfaz — paleta rojo cálido en vez del verde de
+          producto. Mismo motor (FondoGlow, AcabadoGlow), ver kinetico.tsx. */}
+      <Composition
+        id="glow-kinetico-demo"
+        component={GlowKineticoDemo}
+        durationInFrames={DURACION_KINETICO_DEMO}
         fps={glow.canvas.fps}
         width={glow.canvas.width}
         height={glow.canvas.height}
