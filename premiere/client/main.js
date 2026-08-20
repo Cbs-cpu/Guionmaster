@@ -967,10 +967,15 @@ $("#generarRecorteBtn").onclick = function () {
       estado.recorteGenerado = res;
       $("#recorteGeneradoPreview").src = API + "/api/media/" + res.filePath;
       $("#recorteGenerado").classList.remove("oculto");
+
+      // Se inserta solo, sin esperar un segundo clic — con "el clip bajo
+      // el cursor" ya sabemos en qué pista va (estado.archivoSilencios.
+      // pista), y esperar a que el usuario encuentre y pulse un botón
+      // aparte solo añadía un paso donde algo podía no notarse.
       decir(
-        res.tramosConservados + " tramo(s) conservados, " + res.silenciosQuitados + " silencio(s) fuera.",
-        "ok"
+        res.tramosConservados + " tramo(s), " + res.silenciosQuitados + " silencio(s) fuera — insertando…"
       );
+      insertarEnPista(res.filePath, estado.archivoSilencios.pista);
     })
     .catch(function (e) {
       decir(e.message, "error");
