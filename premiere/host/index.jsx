@@ -589,14 +589,22 @@ function sccRecortarSilencios(pista, rangosJson) {
   }
 }
 
-/** Cuántas pistas de vídeo tiene la secuencia activa, para poblar el selector del panel. */
+/**
+ * Cuántas pistas de vídeo Y de audio tiene la secuencia activa. Las de
+ * audio hacen falta para que el panel pueda elegir una pista de sonidos
+ * sueltos (tecleo, whoosh) que NO sea la de la voz — overwriteClip borra
+ * lo que hubiera antes en el punto exacto donde escribe, así que colocar
+ * los sonidos en la MISMA pista que la voz grabada le come trozos de
+ * audio real (visto en un caso real: "corta el audio"). Sin pistas de
+ * audio de sobra, el panel avisa en vez de arriesgarse a estropear la voz.
+ */
 function sccPistas() {
   try {
     var sec = app.project ? app.project.activeSequence : null;
     if (!sec) {
-      return respuesta(true, '{"pistas":0}');
+      return respuesta(true, '{"pistas":0,"pistasAudio":0}');
     }
-    return respuesta(true, '{"pistas":' + sec.videoTracks.numTracks + "}");
+    return respuesta(true, '{"pistas":' + sec.videoTracks.numTracks + ',"pistasAudio":' + sec.audioTracks.numTracks + "}");
   } catch (e) {
     return respuesta(false, null, e.toString());
   }

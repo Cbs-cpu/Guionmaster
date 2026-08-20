@@ -30,6 +30,7 @@ var estado = {
   recursosExternosRoot: null, // ruta absoluta de data/recursos-externos, para insertar/importar desde ahí
   categoriaActiva: null,
   pistas: 0,
+  pistasAudio: 0,
   vista: "recursos",
   recursosVista: "categoria", // "categoria" | "guion"
   archivoElegido: null, // { ruta, nombre }
@@ -438,10 +439,12 @@ function refrescarPistas() {
   return llamarHost("sccPistas", [])
     .then(function (d) {
       estado.pistas = d.pistas || 0;
+      estado.pistasAudio = d.pistasAudio || 0;
       pintarPistas();
     })
     .catch(function () {
       estado.pistas = 0;
+      estado.pistasAudio = 0;
       pintarPistas();
     });
 }
@@ -887,12 +890,21 @@ function pintarGuiones() {
 }
 
 /**
- * Pista de audio donde se insertan el tecleo/whoosh de las animaciones —
- * A1 por defecto. Sin selector propio en la interfaz todavía: la mayoría
- * de proyectos tienen sitio de sobra ahí, y añadir un segundo desplegable
- * solo para esto no compensaba la complejidad hasta que alguien lo pida.
+ * Pista de audio donde se insertan el tecleo/whoosh de las animaciones.
+ *
+ * NUNCA la A1: overwriteClip() borra lo que hubiera antes exactamente en
+ * el punto donde escribe, y la voz grabada casi siempre vive en A1 — un
+ * caso real lo confirmó ("corta el audio", trozos de voz desaparecidos
+ * donde caía un sonido suelto). Se usa la ÚLTIMA pista de audio (la más
+ * alta) como aproximación de "la que probablemente está libre" — no es
+ * perfecto sin un selector propio, pero es mucho más seguro que A1 fijo.
+ * Con una sola pista de audio en la secuencia, se avisa en vez de
+ * arriesgarse: no hay dónde poner los sonidos sin tocar la voz.
  */
-var PISTA_AUDIO_SONIDOS = 0;
+function pistaSeguraSonidos() {
+  if (estado.pistasAudio < 2) return -1;
+  return estado.pistasAudio - 1;
+}
 
 /**
  * Sidecar de sonidos de un recurso (ver VisualResource.sonidosPath en
@@ -903,6 +915,8 @@ var PISTA_AUDIO_SONIDOS = 0;
  */
 function cargarItemsDeSonido(it, tiempoBaseSeg) {
   if (!it.sonidosPath) return Promise.resolve([]);
+  var pistaAudio = pistaSeguraSonidos();
+  if (pistaAudio < 0) return Promise.resolve([]); // sin pista de sobra: el llamador ya avisa, no se insertan sonidos sueltos
   return fetch(API + "/api/media/" + it.sonidosPath)
     .then(function (r) {
       return r.ok ? r.json() : [];
@@ -912,7 +926,7 @@ function cargarItemsDeSonido(it, tiempoBaseSeg) {
         return {
           tipo: "audio",
           ruta: rutaAbsoluta(c.sfxPath),
-          pista: PISTA_AUDIO_SONIDOS,
+          pista: pistaAudio,
           tiempoSeg: tiempoBaseSeg + c.offsetSeg,
         };
       });
@@ -934,6 +948,7 @@ function insertarItemDeGuion(it) {
     return;
   }
 
+  var avisoSinPistaAudio = it.sonidosPath && pistaSeguraSonidos() < 0;
   decir("Insertando “" + it.titulo + "” en " + formatoSeg(it.ancla.tiempoSeg) + "…");
   cargarItemsDeSonido(it, it.ancla.tiempoSeg).then(function (itemsSonido) {
     var lote = [{ tipo: "video", ruta: rutaAbsoluta(it.filePath), pista: pista, tiempoSeg: it.ancla.tiempoSeg }].concat(
@@ -942,7 +957,8 @@ function insertarItemDeGuion(it) {
     llamarHost("sccInsertarLoteEnSecuencia", [JSON.stringify(lote)])
       .then(function (d) {
         var msg = d.insertados + " de " + d.total + " insertado(s)" + (itemsSonido.length ? " (vídeo + sonidos)" : "") + ".";
-        decir(msg, d.fallidos > 0 ? "error" : "ok");
+        if (avisoSinPistaAudio) msg += " Sin sonidos — añade una pista de audio libre (nunca la de tu voz) e inserta otra vez.";
+        decir(msg, d.fallidos > 0 || avisoSinPistaAudio ? "error" : "ok");
       })
       .catch(function (e) {
         decir(e.message, "error");
@@ -962,6 +978,11 @@ function insertarGuionCompleto(g) {
   });
   if (!anclados.length) return;
 
+  var hayAlgunSonido = anclados.some(function (it) {
+    return it.sonidosPath;
+  });
+  var avisoSinPistaAudio = hayAlgunSonido && pistaSeguraSonidos() < 0;
+
   decir("Preparando " + anclados.length + " recurso(s) de “" + g.titulo + "”…");
   Promise.all(
     anclados.map(function (it) {
@@ -979,7 +1000,8 @@ function insertarGuionCompleto(g) {
       .then(function (d) {
         var msg = d.insertados + " de " + d.total + " insertado(s).";
         if (d.fallidos > 0) msg += " " + d.fallidos + " fallaron: " + d.primerError;
-        decir(msg, d.fallidos > 0 ? "error" : "ok");
+        if (avisoSinPistaAudio) msg += " Sin sonidos — añade una pista de audio libre (nunca la de tu voz) e inserta otra vez.";
+        decir(msg, d.fallidos > 0 || avisoSinPistaAudio ? "error" : "ok");
       })
       .catch(function (e) {
         decir(e.message, "error");
