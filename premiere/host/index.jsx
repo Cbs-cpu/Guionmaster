@@ -423,15 +423,17 @@ function sccRecortarSilencios(pista, rangosJson) {
      */
     function recortarRangoEnPista(track, r) {
       var paso = "razor(inicio)";
+      var valorInicio = aRazorString(r.inicioSeg);
+      var valorFin = aRazorString(r.finSeg);
       try {
         var numItemsAntes = track.numItems;
         // Tiempo como STRING DE SEGUNDOS con ≤3 decimales — ver
         // aRazorString arriba para el porqué exacto (confirmado en vivo
         // contra Premiere real con el MCP Bridge, no adivinado).
-        track.razor(aRazorString(r.inicioSeg));
+        track.razor(valorInicio);
         var numItemsTrasInicio = track.numItems;
         paso = "razor(fin)";
-        track.razor(aRazorString(r.finSeg));
+        track.razor(valorFin);
         var numItemsTrasFin = track.numItems;
 
         paso = "buscar clip tras el razor";
@@ -451,10 +453,16 @@ function sccRecortarSilencios(pista, rangosJson) {
         if (!encontrado) {
           return {
             ok: false,
+            valorInicio: valorInicio,
+            valorFin: valorFin,
             error:
               "No se encontró ningún clip en start=" +
               r.inicioSeg +
-              ". numItems antes=" +
+              " (pedido: razor(" +
+              valorInicio +
+              ") y razor(" +
+              valorFin +
+              ")). numItems antes=" +
               numItemsAntes +
               ", tras razor(inicio)=" +
               numItemsTrasInicio +
@@ -473,9 +481,9 @@ function sccRecortarSilencios(pista, rangosJson) {
         // enlazado solo al hacerlo sobre el vídeo, a pesar de lo que hace
         // el ripple delete normal de la interfaz.
         encontrado.rippleDelete();
-        return { ok: true };
+        return { ok: true, valorInicio: valorInicio, valorFin: valorFin };
       } catch (eRango) {
-        return { ok: false, error: "[" + paso + "] " + eRango.toString() };
+        return { ok: false, valorInicio: valorInicio, valorFin: valorFin, error: "[" + paso + "] " + eRango.toString() };
       }
     }
 
@@ -485,6 +493,10 @@ function sccRecortarSilencios(pista, rangosJson) {
     // El motivo del PRIMER fallo (de cualquiera de las dos pistas), tal
     // cual — con eso basta para diagnosticar, no hace falta guardar 33.
     var primerError = null;
+    // Detalle de los primeros N rangos (éxito o fallo) — para ver si el
+    // patrón es el mismo en todos o cambia. Solo vídeo, para no duplicar.
+    var LOG_MAX = 5;
+    var log = [];
 
     for (var i = 0; i < rangos.length; i++) {
       var r = rangos[i];
@@ -495,6 +507,15 @@ function sccRecortarSilencios(pista, rangosJson) {
         fallidos++;
         if (!primerError) primerError = "[vídeo] " + resVideo.error;
       }
+      if (log.length < LOG_MAX) {
+        log.push({
+          inicioSeg: r.inicioSeg,
+          finSeg: r.finSeg,
+          valorInicio: resVideo.valorInicio,
+          valorFin: resVideo.valorFin,
+          ok: resVideo.ok,
+        });
+      }
 
       if (qeAudio) {
         var resAudio = recortarRangoEnPista(qeAudio, r);
@@ -504,6 +525,23 @@ function sccRecortarSilencios(pista, rangosJson) {
           primerError = "[audio] " + resAudio.error;
         }
       }
+    }
+
+    var logTexto = [];
+    for (var li = 0; li < log.length; li++) {
+      var le = log[li];
+      logTexto.push(
+        (le.ok ? "OK" : "FALLO") +
+          " inicioSeg=" +
+          le.inicioSeg +
+          "->razor(" +
+          le.valorInicio +
+          ") finSeg=" +
+          le.finSeg +
+          "->razor(" +
+          le.valorFin +
+          ")"
+      );
     }
 
     return respuesta(
@@ -520,6 +558,8 @@ function sccRecortarSilencios(pista, rangosJson) {
         rangos.length +
         ',"primerError":"' +
         escapar(primerError || "") +
+        '","log":"' +
+        escapar(logTexto.join(" | ")) +
         '"}'
     );
   } catch (e) {

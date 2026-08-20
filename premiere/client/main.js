@@ -964,7 +964,17 @@ $("#aplicarRecorteBtn").onclick = function () {
         if (d.primerError) msg += ": " + d.primerError;
       }
       decir(msg, d.fallidos > 0 ? "error" : "ok");
-      $("#silenciosResultado").classList.add("oculto");
+      // El log de los primeros rangos va en su propio bloque seleccionable
+      // (no en el pie de estado, que se corta a una línea) — así se puede
+      // copiar y pegar tal cual para reportar un fallo.
+      if (d.log) {
+        $("#silenciosLog").textContent = d.log.split(" | ").join("\n");
+        $("#silenciosLog").classList.remove("oculto");
+      } else {
+        // Sin log que enseñar (todo ok o nada que reportar): sí se puede
+        // ocultar el bloque de resultado, como antes.
+        $("#silenciosResultado").classList.add("oculto");
+      }
       estado.silenciosDetectados = null;
     })
     .catch(function (e) {
