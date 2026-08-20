@@ -239,6 +239,12 @@ function sccRecortarSilencios(pista, rangosJson) {
 
     var cortados = 0;
     var fallidos = 0;
+    // El motivo del PRIMER fallo, tal cual — con eso basta para diagnosticar
+    // (los 33 fallan siempre por la misma razón: un nombre de método/
+    // propiedad que no es el de esta versión de la API QE). Guardar los 33
+    // solo repetiría el mismo texto treinta y tres veces.
+    var primerError = null;
+
     for (var i = 0; i < rangos.length; i++) {
       var r = rangos[i];
       try {
@@ -262,13 +268,26 @@ function sccRecortarSilencios(pista, rangosJson) {
           cortados++;
         } else {
           fallidos++;
+          if (!primerError) primerError = "No se encontró ningún clip en start=" + r.inicioSeg + " tras el razor (numItems=" + qeTrack.numItems + ").";
         }
       } catch (eRango) {
         fallidos++;
+        if (!primerError) primerError = eRango.toString();
       }
     }
 
-    return respuesta(true, '{"cortados":' + cortados + ',"fallidos":' + fallidos + ',"total":' + rangos.length + "}");
+    return respuesta(
+      true,
+      '{"cortados":' +
+        cortados +
+        ',"fallidos":' +
+        fallidos +
+        ',"total":' +
+        rangos.length +
+        ',"primerError":"' +
+        escapar(primerError || "") +
+        '"}'
+    );
   } catch (e) {
     return respuesta(false, null, e.toString());
   }

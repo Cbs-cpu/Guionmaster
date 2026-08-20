@@ -552,7 +552,10 @@ $("#aplicarRecorteBtn").onclick = function () {
   llamarHost("sccRecortarSilencios", [origen.pista, JSON.stringify(rangosSecuencia)])
     .then(function (d) {
       var msg = d.cortados + " de " + d.total + " recortado(s).";
-      if (d.fallidos > 0) msg += " " + d.fallidos + " no se pudieron aplicar (revisa manualmente esos huecos).";
+      if (d.fallidos > 0) {
+        msg += " " + d.fallidos + " no se pudieron aplicar";
+        if (d.primerError) msg += ": " + d.primerError;
+      }
       decir(msg, d.fallidos > 0 ? "error" : "ok");
       $("#silenciosResultado").classList.add("oculto");
       estado.silenciosDetectados = null;
