@@ -247,12 +247,20 @@ function sccRecortarSilencios(pista, rangosJson) {
 
     for (var i = 0; i < rangos.length; i++) {
       var r = rangos[i];
+      // Etiqueta de qué paso se estaba intentando cuando algo revienta —
+      // "Illegal Parameter type" no dice cuál de las tres llamadas fue, así
+      // que si vuelve a fallar, al menos sabremos CUÁL sin adivinar otra vez.
+      var paso = "razor(inicio)";
       try {
         // Dos cuchillas: una al inicio del silencio, otra al final. El
-        // trozo que queda entre ambas es el silencio suelto.
-        qeTrack.razor(r.inicioSeg);
-        qeTrack.razor(r.finSeg);
+        // trozo que queda entre ambas es el silencio suelto. El tiempo se
+        // manda como STRING, no como number — la API QE (histórica, no la
+        // DOM moderna) es quisquillosa con esto en varias de sus versiones.
+        qeTrack.razor(String(r.inicioSeg));
+        paso = "razor(fin)";
+        qeTrack.razor(String(r.finSeg));
 
+        paso = "buscar clip tras el razor";
         var encontrado = null;
         for (var c = 0; c < qeTrack.numItems; c++) {
           var clip = qeTrack.getItemAt(c);
@@ -262,6 +270,7 @@ function sccRecortarSilencios(pista, rangosJson) {
           }
         }
         if (encontrado) {
+          paso = "remove";
           // remove(ripple, alignToVideo): con ripple=true todo lo que hay
           // detrás en esta pista se desplaza para cerrar el hueco.
           encontrado.remove(true, true);
@@ -272,7 +281,7 @@ function sccRecortarSilencios(pista, rangosJson) {
         }
       } catch (eRango) {
         fallidos++;
-        if (!primerError) primerError = eRango.toString();
+        if (!primerError) primerError = "[" + paso + "] " + eRango.toString();
       }
     }
 
