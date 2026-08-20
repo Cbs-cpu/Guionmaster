@@ -666,3 +666,125 @@ function sccClipPrincipal() {
     return respuesta(false, null, e.toString());
   }
 }
+
+/**
+ * Los clips de vídeo seleccionados ahora mismo en la secuencia activa —
+ * para aplicarles un LUT sin que el usuario tenga que teclear nada. Usa
+ * `sequence.getSelection()` de la DOM MODERNA (no la QE) — verificado en
+ * vivo que es fiable, a diferencia de casi todo lo que se probó de la QE
+ * hoy (razor, addVideoEffect). Solo clips de vídeo con projectItem propio
+ * (no un color mate ni un título) tienen sentido para un LUT.
+ */
+function sccObtenerSeleccion() {
+  try {
+    if (!app.project) {
+      return respuesta(false, null, "No hay ningún proyecto abierto en Premiere.");
+    }
+    var sec = app.project.activeSequence;
+    if (!sec) {
+      return respuesta(false, null, "No hay ninguna secuencia activa. Abre una en el timeline.");
+    }
+
+    var seleccion = sec.getSelection();
+    if (!seleccion || !seleccion.length) {
+      return respuesta(false, null, "No hay ningún clip seleccionado en el timeline. Selecciona uno o varios y vuelve a intentarlo.");
+    }
+
+    var clips = [];
+    for (var i = 0; i < seleccion.length; i++) {
+      var it = seleccion[i];
+      if (!it.projectItem) continue; // color mate, título, etc. — sin archivo de origen, no hay LUT que aplicar
+      var ruta = it.projectItem.getMediaPath();
+      if (!ruta) continue;
+      clips.push(
+        '{"nombre":"' +
+          escapar(it.name) +
+          '","mediaPath":"' +
+          escapar(ruta) +
+          '","startTicks":"' +
+          it.start.ticks +
+          '","pista":' +
+          it.parentTrackIndex +
+          "}"
+      );
+    }
+    if (!clips.length) {
+      return respuesta(false, null, "Lo seleccionado no tiene archivo de origen propio (¿un color mate o un título?) — un LUT no aplica ahí.");
+    }
+
+    return respuesta(true, "[" + clips.join(",") + "]");
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}
+
+/**
+ * Sustituye cada clip por su versión con el LUT ya horneado (el archivo
+ * nuevo lo genera /api/ai/luts/aplicar con ffmpeg — ver la cabecera de
+ * src/lib/luts/aplicar.ts para el porqué de este camino en vez del efecto
+ * Lumetri de Premiere). `remove(false, false)` + `insertClip` en el mismo
+ * `startTicks` de origen: verificado en vivo que es exacto — a diferencia
+ * de razor(), esto no calcula ningún tiempo nuevo, solo reinserta en la
+ * misma posición que ya tenía el clip.
+ *
+ * `itemsJson` es un array de `{rutaNueva, startTicks, pista}` — el panel
+ * ya ha emparejado cada clip original con su archivo con LUT.
+ */
+function sccSustituirClips(itemsJson) {
+  try {
+    if (!app.project) {
+      return respuesta(false, null, "No hay ningún proyecto abierto en Premiere.");
+    }
+    var sec = app.project.activeSequence;
+    if (!sec) {
+      return respuesta(false, null, "No hay ninguna secuencia activa. Abre una en el timeline.");
+    }
+
+    var items = eval("(" + itemsJson + ")");
+    if (!items || !items.length) {
+      return respuesta(false, null, "No se ha recibido ningún clip que sustituir.");
+    }
+
+    var sustituidos = 0;
+    var fallidos = 0;
+    var primerError = null;
+
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      try {
+        var pista = validarPistaVideo(sec, it.pista);
+        if (pista < 0) throw new Error("Pista de vídeo inválida: " + it.pista);
+        var track = sec.videoTracks[pista];
+
+        // Encuentra el clip que ahora mismo ocupa ese punto exacto de la
+        // pista (por posición, no por índice — puede haber cambiado si un
+        // item anterior de este mismo lote ya se sustituyó).
+        var objetivo = null;
+        for (var c = 0; c < track.clips.numItems; c++) {
+          var cl = track.clips[c];
+          if (cl.start.ticks === it.startTicks) {
+            objetivo = cl;
+            break;
+          }
+        }
+        if (!objetivo) throw new Error("No se encontró el clip original en startTicks=" + it.startTicks + " (¿se movió?).");
+
+        objetivo.remove(false, false);
+
+        var itemNuevo = importarYLocalizar(it.rutaNueva);
+        track.insertClip(itemNuevo, it.startTicks);
+        sustituidos++;
+      } catch (eItem) {
+        fallidos++;
+        if (!primerError) primerError = eItem.toString();
+      }
+    }
+
+    return respuesta(
+      true,
+      '{"sustituidos":' + sustituidos + ',"fallidos":' + fallidos + ',"total":' + items.length + ',"primerError":"' + escapar(primerError || "") + '"}'
+    );
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}

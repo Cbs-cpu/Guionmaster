@@ -577,6 +577,11 @@ function esImportablePremiere(nombre) {
   return /\.(mp4|mov|webm|mp3|wav|aac|m4a|png|jpe?g|webp|gif)$/i.test(nombre);
 }
 
+/** Solo .cube — el resto de LUTs del pack (.itx, Color Finale) no lo lee el filtro lut3d de ffmpeg. */
+function esLutAplicable(nombre) {
+  return /\.cube$/i.test(nombre);
+}
+
 function pintarExternos(arbol) {
   var cont = $("#listaExternos");
   cont.innerHTML = "";
@@ -625,6 +630,15 @@ function nodoExterno(nodo, profundidad) {
         };
         fila.appendChild(bInsertar);
       }
+    } else if (esLutAplicable(nodo.nombre)) {
+      var bAplicarLut = document.createElement("button");
+      bAplicarLut.className = "btn primario";
+      bAplicarLut.textContent = "Aplicar a seleccionados";
+      bAplicarLut.title = "Sustituye cada clip seleccionado en el timeline por su versión con este LUT ya horneado";
+      bAplicarLut.onclick = function () {
+        aplicarLutASeleccion(nodo);
+      };
+      fila.appendChild(bAplicarLut);
     }
     return fila;
   }
@@ -660,6 +674,87 @@ function nodoExterno(nodo, profundidad) {
   carpeta.appendChild(cabecera);
   carpeta.appendChild(cuerpo);
   return carpeta;
+}
+
+/**
+ * Aplica un LUT (.cube) a todos los clips seleccionados en el timeline —
+ * de un tirón, sin que haya que abrir Lumetri ni tocar nada a mano.
+ *
+ * Tres pasos: 1) sccObtenerSeleccion lee qué hay marcado en el timeline
+ * (DOM moderna, fiable); 2) /api/ai/luts/aplicar hornea el LUT en cada
+ * archivo de origen con ffmpeg (Lumetri vía script no es fiable en esta
+ * versión de Premiere — ver la cabecera de host/index.jsx); 3)
+ * sccSustituirClips quita cada clip original y reinserta la versión con
+ * LUT en el MISMO punto exacto (verificado en vivo: exacto, a diferencia
+ * de razor()).
+ */
+function aplicarLutASeleccion(lutNodo) {
+  var rutaLut = rutaExternaAbsoluta(lutNodo);
+  if (!rutaLut) return;
+
+  decir("Leyendo la selección del timeline…");
+  llamarHost("sccObtenerSeleccion", [])
+    .then(function (seleccion) {
+      var clips = seleccion; // array de {nombre, mediaPath, startTicks, pista}
+      decir("Aplicando " + lutNodo.nombre + " a " + clips.length + " clip(s)…");
+
+      return fetch(API + "/api/ai/luts/aplicar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clips: clips.map(function (c) {
+            return { mediaPath: c.mediaPath };
+          }),
+          lutPath: rutaLut,
+        }),
+      })
+        .then(function (r) {
+          return r.json().then(function (j) {
+            if (!r.ok) throw new Error(j.error || "Fallo al aplicar el LUT.");
+            return j;
+          });
+        })
+        .then(function (res) {
+          // Empareja cada resultado con su clip original por mediaPath —
+          // el orden de vuelta de la API coincide con el de entrada, pero
+          // emparejar por valor es más seguro que fiarse del índice.
+          var porRuta = {};
+          res.resultados.forEach(function (r) {
+            porRuta[r.mediaPath] = r;
+          });
+
+          var itemsParaSustituir = [];
+          var fallosGenerando = 0;
+          clips.forEach(function (c) {
+            var r = porRuta[c.mediaPath];
+            if (r && r.ok) {
+              itemsParaSustituir.push({
+                rutaNueva: rutaAbsoluta(r.filePath),
+                startTicks: c.startTicks,
+                pista: c.pista,
+              });
+            } else {
+              fallosGenerando++;
+            }
+          });
+
+          if (!itemsParaSustituir.length) {
+            decir("No se pudo generar ningún clip con LUT.", "error");
+            return;
+          }
+
+          decir("Sustituyendo " + itemsParaSustituir.length + " clip(s) en el timeline…");
+          return llamarHost("sccSustituirClips", [JSON.stringify(itemsParaSustituir)]).then(function (d) {
+            var msg = d.sustituidos + " de " + d.total + " clip(s) con LUT aplicado.";
+            if (fallosGenerando > 0) msg += " " + fallosGenerando + " no se pudieron generar.";
+            if (d.fallidos > 0) msg += " " + d.fallidos + " no se pudieron sustituir: " + d.primerError;
+            decir(msg, d.fallidos > 0 || fallosGenerando > 0 ? "error" : "ok");
+          });
+        });
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    });
 }
 
 /** Ruta absoluta de disco de un recurso externo — data/recursos-externos ya vive fuera de data/media, así que no vale rutaAbsoluta(). */
