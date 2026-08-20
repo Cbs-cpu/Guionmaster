@@ -160,6 +160,50 @@ function sccImportar(rutasJson, nombreBin) {
 }
 
 /**
+ * Importa un archivo al bin raíz si no estaba ya, y devuelve su
+ * ProjectItem. Compartido por todas las funciones de insertar-en-secuencia
+ * — antes vivía duplicado dentro de sccInsertarEnSecuencia.
+ */
+function importarYLocalizar(ruta) {
+  var archivo = new File(ruta);
+  if (!archivo.exists) {
+    throw new Error("El archivo no existe en disco: " + ruta);
+  }
+
+  var raiz = app.project.rootItem;
+  var antes = raiz.children.numItems;
+  app.project.importFiles([ruta], true, raiz, false);
+
+  // importFiles no devuelve el item creado, así que se busca el último
+  // añadido comparando el número de hijos antes/después.
+  var item = null;
+  if (raiz.children.numItems > antes) {
+    item = raiz.children[raiz.children.numItems - 1];
+  } else {
+    // Ya estaba importado: se busca por nombre de archivo.
+    var nombre = archivo.name;
+    for (var k = 0; k < raiz.children.numItems; k++) {
+      if (raiz.children[k].name === nombre) {
+        item = raiz.children[k];
+        break;
+      }
+    }
+  }
+  if (!item) {
+    throw new Error("No se ha podido localizar el clip importado en el proyecto: " + ruta);
+  }
+  return item;
+}
+
+/** Índice de pista válido, o -1 si no existe en la secuencia. */
+function validarPistaVideo(sec, indicePista) {
+  var pista = typeof indicePista === "number" ? indicePista : parseInt(indicePista, 10);
+  if (isNaN(pista) || pista < 0) pista = 0;
+  if (pista >= sec.videoTracks.numTracks) return -1;
+  return pista;
+}
+
+/**
  * Importa e inserta directamente en la secuencia activa, en la pista de
  * vídeo indicada y en la posición del cursor de reproducción.
  *
@@ -177,41 +221,14 @@ function sccInsertarEnSecuencia(ruta, indicePista) {
       return respuesta(false, null, "No hay ninguna secuencia activa. Abre una en el timeline.");
     }
 
-    var archivo = new File(ruta);
-    if (!archivo.exists) {
-      return respuesta(false, null, "El archivo no existe en disco: " + ruta);
-    }
+    var item = importarYLocalizar(ruta);
 
-    var raiz = app.project.rootItem;
-    var antes = raiz.children.numItems;
-    app.project.importFiles([ruta], true, raiz, false);
-
-    // importFiles no devuelve el item creado, así que se busca el último
-    // añadido comparando el número de hijos antes/después.
-    var item = null;
-    if (raiz.children.numItems > antes) {
-      item = raiz.children[raiz.children.numItems - 1];
-    } else {
-      // Ya estaba importado: se busca por nombre de archivo.
-      var nombre = archivo.name;
-      for (var k = 0; k < raiz.children.numItems; k++) {
-        if (raiz.children[k].name === nombre) {
-          item = raiz.children[k];
-          break;
-        }
-      }
-    }
-    if (!item) {
-      return respuesta(false, null, "No se ha podido localizar el clip importado en el proyecto.");
-    }
-
-    var pista = typeof indicePista === "number" ? indicePista : parseInt(indicePista, 10);
-    if (isNaN(pista) || pista < 0) pista = 0;
-    if (pista >= sec.videoTracks.numTracks) {
+    var pista = validarPistaVideo(sec, indicePista);
+    if (pista < 0) {
       return respuesta(
         false,
         null,
-        "La secuencia solo tiene " + sec.videoTracks.numTracks + " pistas de vídeo; pediste la V" + (pista + 1) + "."
+        "La secuencia solo tiene " + sec.videoTracks.numTracks + " pistas de vídeo; pediste la V" + (indicePista + 1) + "."
       );
     }
 
@@ -219,6 +236,110 @@ function sccInsertarEnSecuencia(ruta, indicePista) {
     sec.videoTracks[pista].insertClip(item, tiempo.ticks);
 
     return respuesta(true, '{"pista":' + (pista + 1) + ',"clip":"' + escapar(item.name) + '"}');
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}
+
+/**
+ * Como sccInsertarEnSecuencia, pero en un TIEMPO ARBITRARIO de la
+ * secuencia en vez de en el cursor de reproducción — lo que hace falta
+ * para colocar un recurso exactamente donde dice una AnclaTemporal, sin
+ * tener que mover el cursor a mano cada vez.
+ *
+ * El tiempo se pasa en segundos y se convierte a ticks (la DOM MODERNA de
+ * Premiere, no la QE — aquí `insertClip` sí acepta un tiempo arbitrario
+ * directamente, sin las rarezas de la API QE que hicieron falta para
+ * sccRecortarSilencios).
+ */
+var TICKS_POR_SEGUNDO = 254016000000;
+
+function sccInsertarEnTiempo(ruta, indicePista, tiempoSeg) {
+  try {
+    if (!app.project) {
+      return respuesta(false, null, "No hay ningún proyecto abierto en Premiere.");
+    }
+    var sec = app.project.activeSequence;
+    if (!sec) {
+      return respuesta(false, null, "No hay ninguna secuencia activa. Abre una en el timeline.");
+    }
+
+    var item = importarYLocalizar(ruta);
+
+    var pista = validarPistaVideo(sec, indicePista);
+    if (pista < 0) {
+      return respuesta(
+        false,
+        null,
+        "La secuencia solo tiene " + sec.videoTracks.numTracks + " pistas de vídeo; pediste la V" + (indicePista + 1) + "."
+      );
+    }
+
+    var ticks = String(Math.round(parseFloat(tiempoSeg) * TICKS_POR_SEGUNDO));
+    sec.videoTracks[pista].insertClip(item, ticks);
+
+    return respuesta(true, '{"pista":' + (pista + 1) + ',"clip":"' + escapar(item.name) + '","tiempoSeg":' + tiempoSeg + "}");
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}
+
+/**
+ * Inserta VARIOS recursos de una sola llamada, cada uno en su tiempo y
+ * pista — un "Insertar todo" para las anclas temporales de un guion, en
+ * vez de un evalScript por recurso (más lento y más propenso a que el
+ * cursor de reproducción se mueva entre medias por accidente).
+ *
+ * `itemsJson` es un array JSON de `{ruta, pista, tiempoSeg}`. Un fallo en
+ * UN item no aborta el resto — se acumulan éxitos/fallos, igual que
+ * sccRecortarSilencios.
+ */
+function sccInsertarLoteEnSecuencia(itemsJson) {
+  try {
+    if (!app.project) {
+      return respuesta(false, null, "No hay ningún proyecto abierto en Premiere.");
+    }
+    var sec = app.project.activeSequence;
+    if (!sec) {
+      return respuesta(false, null, "No hay ninguna secuencia activa. Abre una en el timeline.");
+    }
+
+    var items = eval("(" + itemsJson + ")");
+    if (!items || !items.length) {
+      return respuesta(false, null, "No se ha recibido ningún recurso que insertar.");
+    }
+
+    var insertados = 0;
+    var fallidos = 0;
+    var primerError = null;
+
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      try {
+        var item = importarYLocalizar(it.ruta);
+        var pista = validarPistaVideo(sec, it.pista);
+        if (pista < 0) throw new Error("Pista de vídeo inválida: " + it.pista);
+        var ticks = String(Math.round(parseFloat(it.tiempoSeg) * TICKS_POR_SEGUNDO));
+        sec.videoTracks[pista].insertClip(item, ticks);
+        insertados++;
+      } catch (eItem) {
+        fallidos++;
+        if (!primerError) primerError = eItem.toString();
+      }
+    }
+
+    return respuesta(
+      true,
+      '{"insertados":' +
+        insertados +
+        ',"fallidos":' +
+        fallidos +
+        ',"total":' +
+        items.length +
+        ',"primerError":"' +
+        escapar(primerError || "") +
+        '"}'
+    );
   } catch (e) {
     return respuesta(false, null, e.toString());
   }

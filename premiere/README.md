@@ -40,13 +40,25 @@ Tres vistas, arriba del todo:
 
 ### Recursos
 
-- Pestañas: categorías, igual que en `/recursos` de la web.
-- **Importar**: mete el archivo en un bin del proyecto ("System Content
-  Studio"), sin tocar el timeline.
-- **Insertar**: importa y además lo coloca en la secuencia activa, en la
-  pista que elijas del selector de arriba, en la posición del cursor de
-  reproducción. Solo aparece para vídeo/imagen — un `.ass` no se inserta,
-  Premiere ni siquiera lo importa como clip.
+Dos formas de verlos, con el toggle de arriba:
+
+- **Por categoría** — la vista de siempre: pestañas por tipo, igual que en
+  `/recursos` de la web.
+  - **Importar**: mete el archivo en un bin del proyecto ("System Content
+    Studio"), sin tocar el timeline.
+  - **Insertar**: importa y además lo coloca en la secuencia activa, en la
+    pista que elijas del selector de arriba, en la posición del cursor de
+    reproducción. Solo aparece para vídeo/imagen — un `.ass` no se inserta,
+    Premiere ni siquiera lo importa como clip.
+- **Por guion** — una carpeta por vídeo, con todos sus recursos dentro. Si
+  el guion tiene **anclas temporales** (`AnclaTemporal` en
+  `src/lib/types.ts` — vienen de proponerlas con `/api/ai/anclas/generar`
+  sobre la transcripción del vídeo ya grabado y cortado, y guardarlas tras
+  revisarlas), cada recurso enseña el segundo exacto y la frase que lo
+  motivó, y aparece un botón **"Insertar todo"** que coloca todos los
+  recursos anclados de ese guion en su sitio de una sola vez —
+  `sccInsertarLoteEnSecuencia`, no un clic por recurso. Un recurso sin
+  ancla se sigue insertando en el cursor, como siempre.
 - ↻ vuelve a leer el estado del estudio (por si acabas de generar algo).
 
 ### Silencios

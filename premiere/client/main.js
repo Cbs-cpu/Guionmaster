@@ -26,9 +26,11 @@ var estado = {
   mediaRoot: null,
   separador: "\\",
   recursos: [],
+  estudioCompleto: null, // el state.state crudo, para agruparPorGuion (aplanarRecursos ya lo destroza)
   categoriaActiva: null,
   pistas: 0,
   vista: "recursos",
+  recursosVista: "categoria", // "categoria" | "guion"
   archivoElegido: null, // { ruta, nombre }
   transcripcion: null, // { filePath, palabras }
   lineas: null, // líneas ya agrupadas (sin renderizar), para el preview en vivo
@@ -166,6 +168,67 @@ function aplanarRecursos(st) {
   return out;
 }
 
+/**
+ * Agrupa los `visuals` de cada guion en una "carpeta" — la vista que pidió
+ * el usuario para no tener que buscar entre todos los recursos mezclados:
+ * un guion, sus recursos, y si tiene AnclaTemporal (ver types.ts), el
+ * tiempo exacto donde va cada uno según el SRT del vídeo ya grabado.
+ *
+ * A diferencia de aplanarRecursos(), aquí NO se mezclan subtitleStyles (son
+ * de canal, no de guion concreto — no tienen "carpeta" a la que pertenecer)
+ * ni se filtra por categoría: una carpeta de guion enseña TODOS sus
+ * recursos juntos, sea cual sea su tipo.
+ */
+function agruparPorGuion(st) {
+  var guiones = st.scripts || [];
+  var out = [];
+  for (var i = 0; i < guiones.length; i++) {
+    var g = guiones[i];
+    var visuals = g.visuals || [];
+    if (!visuals.length) continue;
+
+    var anclasPorRecurso = {};
+    var anclas = g.anclasTemporales || [];
+    for (var a = 0; a < anclas.length; a++) {
+      anclasPorRecurso[anclas[a].recursoId] = anclas[a];
+    }
+
+    var items = [];
+    for (var j = 0; j < visuals.length; j++) {
+      var v = visuals[j];
+      items.push({
+        id: v.id,
+        titulo: v.id.replace(/^visual_anim_/, "").replace(/^visual_/, ""),
+        filePath: v.filePath,
+        creado: v.createdAt || "",
+        ancla: anclasPorRecurso[v.id] || null,
+      });
+    }
+    items.sort(function (x, y) {
+      // Con ancla: por tiempo, en el orden en que aparecen en el vídeo.
+      // Sin ancla: al final, por fecha de creación.
+      if (x.ancla && y.ancla) return x.ancla.tiempoSeg - y.ancla.tiempoSeg;
+      if (x.ancla) return -1;
+      if (y.ancla) return 1;
+      return x.creado < y.creado ? 1 : -1;
+    });
+
+    out.push({
+      guionId: g.id,
+      titulo: g.title || g.id,
+      tipo: g.type || "",
+      items: items,
+      totalAnclados: items.filter(function (it) {
+        return it.ancla;
+      }).length,
+    });
+  }
+  out.sort(function (a, b) {
+    return a.titulo < b.titulo ? -1 : 1;
+  });
+  return out;
+}
+
 function cargar() {
   decir("Conectando con el estudio…");
   $("#conexion").className = "aviso oculto";
@@ -181,7 +244,8 @@ function cargar() {
     .then(function (res) {
       estado.mediaRoot = res[0].mediaRoot;
       estado.separador = res[0].separator || "\\";
-      estado.recursos = aplanarRecursos(res[1].state || {});
+      estado.estudioCompleto = res[1].state || {};
+      estado.recursos = aplanarRecursos(estado.estudioCompleto);
 
       if (!estado.categoriaActiva) {
         // Arranca en la primera categoría que tenga algo, para no abrir en vacío.
@@ -196,6 +260,7 @@ function cargar() {
 
       pintarPestanas();
       pintarLista();
+      if (estado.recursosVista === "guion") pintarGuiones();
       decir(estado.recursos.length + " recursos disponibles", "ok");
     })
     .catch(function (e) {
@@ -432,6 +497,168 @@ for (var vi = 0; vi < botonesVista.length; vi++) {
     $("#vistaSilencios").classList.toggle("oculto", estado.vista !== "silencios");
     $("#vistaTranscribir").classList.toggle("oculto", estado.vista !== "transcribir");
   };
+}
+
+// ── Recursos por guion ───────────────────────────────────────────────────
+//
+// "Por categoría" (aplanarRecursos, de siempre) mezcla todo sin importar de
+// qué vídeo viene. "Por guion" (agruparPorGuion) es la vista que pidió el
+// usuario: una carpeta por vídeo, con sus recursos — y si el guion tiene
+// AnclaTemporal (viene de /api/ai/anclas/generar, guardadas desde la web
+// tras revisarlas), cada recurso ya sabe EN QUÉ SEGUNDO va, así que
+// "Insertar todo" coloca todo el guion de una vez, sincronizado, en vez de
+// arrastrar recurso a recurso a mano.
+
+var botonesSubvista = document.querySelectorAll(".subvista-btn");
+for (var si = 0; si < botonesSubvista.length; si++) {
+  botonesSubvista[si].onclick = function () {
+    estado.recursosVista = this.getAttribute("data-subvista");
+    for (var j = 0; j < botonesSubvista.length; j++) {
+      botonesSubvista[j].classList.toggle("activa", botonesSubvista[j] === this);
+    }
+    $("#pestanas").classList.toggle("oculto", estado.recursosVista !== "categoria");
+    $("#lista").classList.toggle("oculto", estado.recursosVista !== "categoria");
+    $("#listaGuiones").classList.toggle("oculto", estado.recursosVista !== "guion");
+    if (estado.recursosVista === "guion") pintarGuiones();
+  };
+}
+
+function pintarGuiones() {
+  var cont = $("#listaGuiones");
+  cont.innerHTML = "";
+
+  var guiones = agruparPorGuion(estado.estudioCompleto || {});
+  if (!guiones.length) {
+    cont.innerHTML = '<p class="vacio">Ningún guion tiene recursos generados todavía.</p>';
+    return;
+  }
+
+  guiones.forEach(function (g) {
+    var carpeta = document.createElement("div");
+    carpeta.className = "guion";
+
+    var cabecera = document.createElement("div");
+    cabecera.className = "guion-cabecera";
+    var titulo = document.createElement("div");
+    titulo.className = "guion-titulo";
+    titulo.textContent = g.titulo;
+    var meta = document.createElement("div");
+    meta.className = "guion-meta";
+    meta.textContent = g.items.length + " recurso(s)" + (g.totalAnclados ? " · " + g.totalAnclados + " con tiempo" : "");
+    cabecera.appendChild(titulo);
+    cabecera.appendChild(meta);
+
+    var cuerpo = document.createElement("div");
+    cuerpo.className = "guion-cuerpo oculto";
+
+    if (g.totalAnclados > 0) {
+      var bTodo = document.createElement("button");
+      bTodo.className = "btn primario ancho";
+      bTodo.textContent = "Insertar todo (" + g.totalAnclados + " en su tiempo)";
+      bTodo.style.marginBottom = "8px";
+      bTodo.onclick = (function (guionCerrado) {
+        return function () {
+          insertarGuionCompleto(guionCerrado);
+        };
+      })(g);
+      cuerpo.appendChild(bTodo);
+    }
+
+    g.items.forEach(function (it) {
+      var fila = document.createElement("div");
+      fila.className = "guion-item";
+
+      var info = document.createElement("div");
+      info.className = "guion-item-info";
+      var t = document.createElement("div");
+      t.className = "guion-item-titulo";
+      t.textContent = it.titulo;
+      info.appendChild(t);
+      if (it.ancla) {
+        var tiempo = document.createElement("div");
+        tiempo.className = "guion-item-tiempo";
+        tiempo.textContent = formatoSeg(it.ancla.tiempoSeg) + " — “" + it.ancla.palabra + "”";
+        info.appendChild(tiempo);
+      } else {
+        var sinAncla = document.createElement("div");
+        sinAncla.className = "guion-item-sin-ancla";
+        sinAncla.textContent = "sin tiempo asignado";
+        info.appendChild(sinAncla);
+      }
+      fila.appendChild(info);
+
+      var bInsertar = document.createElement("button");
+      bInsertar.className = "btn";
+      bInsertar.textContent = "Insertar";
+      bInsertar.onclick = (function (item) {
+        return function () {
+          insertarItemDeGuion(item);
+        };
+      })(it);
+      fila.appendChild(bInsertar);
+
+      cuerpo.appendChild(fila);
+    });
+
+    cabecera.onclick = (function (c) {
+      return function () {
+        c.classList.toggle("oculto");
+      };
+    })(cuerpo);
+
+    carpeta.appendChild(cabecera);
+    carpeta.appendChild(cuerpo);
+    cont.appendChild(carpeta);
+  });
+}
+
+/** Un solo recurso: con ancla, en su tiempo; sin ancla, en el cursor como siempre. */
+function insertarItemDeGuion(it) {
+  var pista = parseInt($("#pista").value, 10);
+  if (isNaN(pista) || pista < 0) {
+    decir("Abre una secuencia en el timeline primero.", "error");
+    return;
+  }
+  if (it.ancla) {
+    decir("Insertando “" + it.titulo + "” en " + formatoSeg(it.ancla.tiempoSeg) + "…");
+    llamarHost("sccInsertarEnTiempo", [rutaAbsoluta(it.filePath), pista, it.ancla.tiempoSeg])
+      .then(function (d) {
+        decir("“" + d.clip + "” insertado en V" + d.pista + " en " + formatoSeg(it.ancla.tiempoSeg), "ok");
+      })
+      .catch(function (e) {
+        decir(e.message, "error");
+      });
+  } else {
+    insertar({ filePath: it.filePath });
+  }
+}
+
+/** Todo lo anclado de un guion, de una sola llamada — sccInsertarLoteEnSecuencia. */
+function insertarGuionCompleto(g) {
+  var pista = parseInt($("#pista").value, 10);
+  if (isNaN(pista) || pista < 0) {
+    decir("Abre una secuencia en el timeline primero.", "error");
+    return;
+  }
+  var anclados = g.items.filter(function (it) {
+    return it.ancla;
+  });
+  if (!anclados.length) return;
+
+  var lote = anclados.map(function (it) {
+    return { ruta: rutaAbsoluta(it.filePath), pista: pista, tiempoSeg: it.ancla.tiempoSeg };
+  });
+
+  decir("Insertando " + lote.length + " recurso(s) de “" + g.titulo + "”…");
+  llamarHost("sccInsertarLoteEnSecuencia", [JSON.stringify(lote)])
+    .then(function (d) {
+      var msg = d.insertados + " de " + d.total + " insertado(s).";
+      if (d.fallidos > 0) msg += " " + d.fallidos + " fallaron: " + d.primerError;
+      decir(msg, d.fallidos > 0 ? "error" : "ok");
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    });
 }
 
 // ── Silencios ────────────────────────────────────────────────────────────

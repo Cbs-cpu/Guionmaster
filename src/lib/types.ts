@@ -264,6 +264,8 @@ export interface ScriptRecord {
   notes?: string;
   resources?: ResourceLink[];
   visuals?: VisualResource[];
+  /** Recursos de `visuals` enlazados a un tiempo concreto del vídeo ya grabado — ver AnclaTemporal. */
+  anclasTemporales?: AnclaTemporal[];
 
   // Entrelazado de documentos: de qué marcos de conocimiento nace este
   // contenido y con qué otros contenidos forma familia (un vídeo de YouTube,
@@ -314,6 +316,27 @@ export interface VisualResource {
   /** Si acompaña a un capítulo concreto de un vídeo de YouTube. */
   chapterId?: string;
   notes?: string;
+  createdAt: string;
+}
+
+// ─── Anclas temporales (SRT del vídeo ya grabado) ──────────────────────────
+// Distintas de la ancla `[[clave|frase]]` de script-marks.ts: aquella enlaza
+// una animación a una FRASE del guion ESCRITO, antes de grabar. Esta enlaza
+// un `VisualResource` a un TIEMPO concreto de la TRANSCRIPCIÓN REAL del
+// vídeo ya grabado y editado (después de cortar silencios) — lo que permite
+// al panel de Premiere insertar el recurso en el minuto exacto donde debe
+// ir, en vez de que el usuario lo arrastre a mano.
+
+export interface AnclaTemporal {
+  id: string;
+  /** Id del VisualResource (en `scripts[].visuals`) que se coloca aquí. */
+  recursoId: string;
+  /** Segundos desde el arranque del vídeo YA CORTADO (el que se transcribió). */
+  tiempoSeg: number;
+  /** Palabra o frase corta de la transcripción que motivó este anclaje — para mostrarla en el panel. */
+  palabra: string;
+  /** Por qué la IA eligió este punto (se enseña en el panel, no se usa para nada más). */
+  motivo?: string;
   createdAt: string;
 }
 

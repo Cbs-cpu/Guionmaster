@@ -52,3 +52,8 @@ next-env.d.ts
 
 # Cerrojo del generador de imágenes (scripts/gen-capas-contexto.mjs)
 .gen.lock
+
+# Packs de recursos de edición de terceros (LUTs, SFX, overlays, presets…),
+# ~40 GB — igual que studio.db, contenido personal que NUNCA va a git, ni
+# siquiera vía LFS (muy por encima de cualquier cuota razonable).
+/data/recursos-externos/
