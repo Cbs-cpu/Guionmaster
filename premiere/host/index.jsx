@@ -233,7 +233,12 @@ function sccInsertarEnSecuencia(ruta, indicePista) {
     }
 
     var tiempo = sec.getPlayerPosition();
-    sec.videoTracks[pista].insertClip(item, tiempo.ticks);
+    // overwriteClip, no insertClip: insertClip hace ripple (empuja todo lo
+    // que ya hubiera en la pista después del punto de inserción) — para
+    // "pon esto exactamente aquí" sin desordenar nada más, overwrite es la
+    // operación correcta. Confirmado en vivo: insertClip fue lo que
+    // apelotonaba los sonidos sueltos de sccInsertarLoteEnSecuencia.
+    sec.videoTracks[pista].overwriteClip(item, tiempo.ticks);
 
     return respuesta(true, '{"pista":' + (pista + 1) + ',"clip":"' + escapar(item.name) + '"}');
   } catch (e) {
@@ -276,7 +281,7 @@ function sccInsertarEnTiempo(ruta, indicePista, tiempoSeg) {
     }
 
     var ticks = String(Math.round(parseFloat(tiempoSeg) * TICKS_POR_SEGUNDO));
-    sec.videoTracks[pista].insertClip(item, ticks);
+    sec.videoTracks[pista].overwriteClip(item, ticks); // ver el comentario de sccInsertarEnSecuencia sobre por qué overwrite, no insert
 
     return respuesta(true, '{"pista":' + (pista + 1) + ',"clip":"' + escapar(item.name) + '","tiempoSeg":' + tiempoSeg + "}");
   } catch (e) {
@@ -332,11 +337,11 @@ function sccInsertarLoteEnSecuencia(itemsJson) {
         if (it.tipo === "audio") {
           var pistaA = validarPistaAudio(sec, it.pista);
           if (pistaA < 0) throw new Error("Pista de audio inválida: " + it.pista);
-          sec.audioTracks[pistaA].insertClip(item, ticks);
+          sec.audioTracks[pistaA].overwriteClip(item, ticks); // overwrite, no insert — ver sccInsertarEnSecuencia
         } else {
           var pistaV = validarPistaVideo(sec, it.pista);
           if (pistaV < 0) throw new Error("Pista de vídeo inválida: " + it.pista);
-          sec.videoTracks[pistaV].insertClip(item, ticks);
+          sec.videoTracks[pistaV].overwriteClip(item, ticks);
         }
         insertados++;
       } catch (eItem) {
@@ -789,7 +794,7 @@ function sccSustituirClips(itemsJson) {
         objetivo.remove(false, false);
 
         var itemNuevo = importarYLocalizar(it.rutaNueva);
-        track.insertClip(itemNuevo, it.startTicks);
+        track.overwriteClip(itemNuevo, it.startTicks); // overwrite, no insert — mismo motivo que sccInsertarEnSecuencia
         sustituidos++;
       } catch (eItem) {
         fallidos++;
