@@ -25,6 +25,9 @@ const ESCALONADO_PALABRA = 6;
 const SALIDA_FRAMES = 10;
 /** El sonido de tecla es más corto que el hueco entre palabras, así que no hace falta recortarlo. */
 const SFX_TECLA = staticFile("sfx/tecla.mp3");
+/** Whoosh de entrada/salida — del pack de recursos (Creator Pack/SFXs/Whooshes). */
+const SFX_WHOOSH_ENTRADA = staticFile("sfx/whoosh-entrada.wav");
+const SFX_WHOOSH_SALIDA = staticFile("sfx/whoosh-salida.mp3");
 
 export interface TokenKinetico {
   texto: string;
@@ -104,12 +107,17 @@ const FraseKinetica: React.FC<{ def: FraseKineticaDef; frameLocal: number; color
         return (
           <React.Fragment key={i}>
             <PalabraKinetica texto={tok.texto} clave={Boolean(tok.clave)} retardo={retardo} colorAcento={colorAcento} />
-            {/* Un golpe de tecla por palabra, disparado justo cuando arranca su muelle — Sequence recorta el
-                audio para que no se oiga más allá de la duración del clip aunque la palabra sea la última. */}
+            {/* Un golpe de tecla por palabra, disparado justo cuando arranca su muelle. */}
             {frameLocal >= retardo && frameLocal < retardo + 6 && <Audio src={SFX_TECLA} startFrom={0} volume={0.7} />}
           </React.Fragment>
         );
       })}
+      {/* Whoosh de entrada (frame 0) y de salida (arrancando la ventana de
+          salida, no al final exacto — así el whoosh ya está sonando cuando
+          el plano termina de desvanecerse, no empieza después). Volumen
+          más bajo que el tecleo: son la cama, no el protagonista. */}
+      {frameLocal === 0 && <Audio src={SFX_WHOOSH_ENTRADA} volume={0.5} />}
+      {frameLocal === def.duracion - SALIDA_FRAMES && <Audio src={SFX_WHOOSH_SALIDA} volume={0.55} />}
     </div>
   );
 };

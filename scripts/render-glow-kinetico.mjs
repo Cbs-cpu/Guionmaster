@@ -1,7 +1,14 @@
 // Renderiza una o varias frases de la variante "kinético" de glow
-// (remotion/scenes/glow/kinetico.tsx) a su .mov con canal alfa — mismo
-// patrón que render-subtitulos.mjs (proceso aparte, no import dentro de
-// Next.js, ver la cabecera de ese archivo para el porqué).
+// (remotion/scenes/glow/kinetico.tsx) a un .mp4 A PANTALLA COMPLETA (fondo
+// oscuro + resplandor de verdad, no canal alfa) — es un plano de corte, no
+// un overlay que flota encima del vídeo: por eso lleva el fondo horneado,
+// con el whoosh de entrada/salida y el tecleo por palabra ya mezclados en
+// el propio archivo. Se coloca en la pista de arriba igual que un overlay
+// — al ser opaco, tapa el plano de abajo mientras dura, que es justo el
+// efecto de "pantalla completa" pedido.
+//
+// Mismo patrón que render-subtitulos.mjs (proceso aparte, no import dentro
+// de Next.js, ver la cabecera de ese archivo para el porqué).
 //
 //   node scripts/render-glow-kinetico.mjs --frases=<ruta.json>
 //
@@ -57,7 +64,10 @@ for (const frase of frases) {
       ? { acento: "#FF5A45", acentoSuave: "rgba(255, 90, 69, 0.16)" }
       : { acento: "#FFC300", acentoSuave: "rgba(255, 195, 0, 0.16)" };
 
-  const inputProps = { tokens: frase.tokens, duracion: frase.duracion, estilo: estiloProp, fondoPreview: false };
+  // fondoPreview:true SIEMPRE aquí — es la entrega real, no la
+  // previsualización web: el fondo oscuro+resplandor tiene que estar
+  // horneado en el archivo para que el plano tape lo que hay debajo.
+  const inputProps = { tokens: frase.tokens, duracion: frase.duracion, estilo: estiloProp, fondoPreview: true };
 
   const composition = await selectComposition({
     serveUrl,
@@ -65,25 +75,23 @@ for (const frase of frases) {
     inputProps,
   });
 
-  const overlayRel = `generated/glow-kinetico-${frase.out}.mov`;
-  const overlayAbs = path.join(MEDIA_DIR, overlayRel);
-  fs.mkdirSync(path.dirname(overlayAbs), { recursive: true });
+  const salidaRel = `generated/glow-kinetico-${frase.out}.mp4`;
+  const salidaAbs = path.join(MEDIA_DIR, salidaRel);
+  fs.mkdirSync(path.dirname(salidaAbs), { recursive: true });
 
   await renderMedia({
     composition,
     serveUrl,
-    codec: "prores",
-    proResProfile: "4444",
-    pixelFormat: "yuva444p10le",
-    imageFormat: "png",
-    outputLocation: overlayAbs,
+    codec: "h264",
+    crf: 16,
+    outputLocation: salidaAbs,
     inputProps,
     onProgress: () => {},
   });
 
   resultados.push({
     out: frase.out,
-    filePath: overlayRel,
+    filePath: salidaRel,
     duracionFrames: composition.durationInFrames,
   });
 }
