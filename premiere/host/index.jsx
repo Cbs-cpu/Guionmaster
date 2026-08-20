@@ -267,52 +267,51 @@ function sccRecortarSilencios(pista, rangosJson) {
 
     var indicePista = typeof pista === "number" ? pista : parseInt(pista, 10);
     if (isNaN(indicePista) || indicePista < 0) indicePista = 0;
-    var qeTrack = qeSec.getVideoTrackAt(indicePista);
-    if (!qeTrack) {
+    var qeVideo = qeSec.getVideoTrackAt(indicePista);
+    if (!qeVideo) {
       return respuesta(false, null, "No existe la pista de vídeo V" + (indicePista + 1) + " en la API QE.");
     }
+    // El audio del clip principal vive normalmente en la pista de audio del
+    // MISMO índice (A1 para V1, etc. — la convención por defecto de
+    // Premiere al importar un archivo con audio+vídeo). Si no existe esa
+    // pista de audio, se sigue recortando solo el vídeo en vez de fallar
+    // entero: mejor un resultado parcial avisado que nada.
+    var qeAudio = qeSec.getAudioTrackAt(indicePista);
 
     // De más tarde a más temprano: al recortar por el final primero, las
     // posiciones de los rangos que aún no se han tocado no se mueven —
     // recortar de temprano a tarde obligaría a recalcular cada rango
-    // siguiente después de cada ripple.
+    // siguiente después de cada ripple. Válido pista por pista: un delete
+    // en audio no mueve nada de vídeo ni viceversa, son listas de clips
+    // independientes en la API QE.
     rangos.sort(function (a, b) {
       return b.inicioSeg - a.inicioSeg;
     });
 
-    var cortados = 0;
-    var fallidos = 0;
-    // El motivo del PRIMER fallo, tal cual — con eso basta para diagnosticar
-    // (los 33 fallan siempre por la misma razón: un nombre de método/
-    // propiedad que no es el de esta versión de la API QE). Guardar los 33
-    // solo repetiría el mismo texto treinta y tres veces.
-    var primerError = null;
-
-    for (var i = 0; i < rangos.length; i++) {
-      var r = rangos[i];
-      // Etiqueta de qué paso se estaba intentando cuando algo revienta —
-      // "Illegal Parameter type" no dice cuál de las tres llamadas fue, así
-      // que si vuelve a fallar, al menos sabremos CUÁL sin adivinar otra vez.
+    /**
+     * Recorta UN rango en UNA pista (vídeo o audio, misma lógica para
+     * las dos): dos cuchillas + buscar el trozo resultante + rippleDelete.
+     * Devuelve {ok:true} o {ok:false, error, volcado} — nunca lanza, el
+     * llamador decide qué hacer con cada resultado.
+     */
+    function recortarRangoEnPista(track, r) {
       var paso = "razor(inicio)";
       try {
-        var numItemsAntes = qeTrack.numItems;
-
-        // Dos cuchillas: una al inicio del silencio, otra al final. El
-        // trozo que queda entre ambas es el silencio suelto. El tiempo va
-        // como STRING DE SEGUNDOS con ≤3 decimales — ver aRazorString
-        // arriba para el porqué exacto (confirmado en vivo contra Premiere
-        // real con el MCP Bridge, no adivinado).
-        qeTrack.razor(aRazorString(r.inicioSeg));
-        var numItemsTrasInicio = qeTrack.numItems;
+        var numItemsAntes = track.numItems;
+        // Tiempo como STRING DE SEGUNDOS con ≤3 decimales — ver
+        // aRazorString arriba para el porqué exacto (confirmado en vivo
+        // contra Premiere real con el MCP Bridge, no adivinado).
+        track.razor(aRazorString(r.inicioSeg));
+        var numItemsTrasInicio = track.numItems;
         paso = "razor(fin)";
-        qeTrack.razor(aRazorString(r.finSeg));
-        var numItemsTrasFin = qeTrack.numItems;
+        track.razor(aRazorString(r.finSeg));
+        var numItemsTrasFin = track.numItems;
 
         paso = "buscar clip tras el razor";
         var encontrado = null;
-        var volcado = []; // solo se rellena si no se encuentra nada, para el diagnóstico
-        for (var c = 0; c < qeTrack.numItems; c++) {
-          var clip = qeTrack.getItemAt(c);
+        var volcado = [];
+        for (var c = 0; c < track.numItems; c++) {
+          var clip = track.getItemAt(c);
           if (!clip) continue;
           var inicioClip = aSegundos(clip.start);
           var finClip = aSegundos(clip.end);
@@ -322,18 +321,10 @@ function sccRecortarSilencios(pista, rangosJson) {
           }
           volcado.push(inicioClip.toFixed(3) + "→" + finClip.toFixed(3));
         }
-        if (encontrado) {
-          paso = "rippleDelete";
-          // Método propio del clip (confirmado por reflect en vivo) — hace
-          // exactamente lo que dice: borra este trozo y desplaza todo lo
-          // posterior de la pista para cerrar el hueco. Mejor que adivinar
-          // los argumentos de remove(bool, bool).
-          encontrado.rippleDelete();
-          cortados++;
-        } else {
-          fallidos++;
-          if (!primerError) {
-            primerError =
+        if (!encontrado) {
+          return {
+            ok: false,
+            error:
               "No se encontró ningún clip en start=" +
               r.inicioSeg +
               ". numItems antes=" +
@@ -344,19 +335,58 @@ function sccRecortarSilencios(pista, rangosJson) {
               numItemsTrasFin +
               ". Clips vistos (inicio→fin): [" +
               volcado.join(", ") +
-              "]";
-          }
+              "]",
+          };
         }
+        paso = "rippleDelete";
+        // Método propio del clip (confirmado por reflect en vivo) — hace
+        // exactamente lo que dice: borra este trozo y desplaza todo lo
+        // posterior de la PISTA para cerrar el hueco. Cada pista (vídeo,
+        // audio) se recorta por separado — la API QE no mueve el audio
+        // enlazado solo al hacerlo sobre el vídeo, a pesar de lo que hace
+        // el ripple delete normal de la interfaz.
+        encontrado.rippleDelete();
+        return { ok: true };
       } catch (eRango) {
+        return { ok: false, error: "[" + paso + "] " + eRango.toString() };
+      }
+    }
+
+    var cortadosVideo = 0;
+    var cortadosAudio = 0;
+    var fallidos = 0;
+    // El motivo del PRIMER fallo (de cualquiera de las dos pistas), tal
+    // cual — con eso basta para diagnosticar, no hace falta guardar 33.
+    var primerError = null;
+
+    for (var i = 0; i < rangos.length; i++) {
+      var r = rangos[i];
+      var resVideo = recortarRangoEnPista(qeVideo, r);
+      if (resVideo.ok) {
+        cortadosVideo++;
+      } else {
         fallidos++;
-        if (!primerError) primerError = "[" + paso + "] " + eRango.toString();
+        if (!primerError) primerError = "[vídeo] " + resVideo.error;
+      }
+
+      if (qeAudio) {
+        var resAudio = recortarRangoEnPista(qeAudio, r);
+        if (resAudio.ok) {
+          cortadosAudio++;
+        } else if (!primerError) {
+          primerError = "[audio] " + resAudio.error;
+        }
       }
     }
 
     return respuesta(
       true,
       '{"cortados":' +
-        cortados +
+        cortadosVideo +
+        ',"cortadosAudio":' +
+        cortadosAudio +
+        ',"tuvoAudio":' +
+        (qeAudio ? "true" : "false") +
         ',"fallidos":' +
         fallidos +
         ',"total":' +

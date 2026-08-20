@@ -551,9 +551,11 @@ $("#aplicarRecorteBtn").onclick = function () {
 
   llamarHost("sccRecortarSilencios", [origen.pista, JSON.stringify(rangosSecuencia)])
     .then(function (d) {
-      var msg = d.cortados + " de " + d.total + " recortado(s).";
+      var msg = "Vídeo: " + d.cortados + " de " + d.total + " recortado(s).";
+      if (d.tuvoAudio) msg += " Audio: " + d.cortadosAudio + " de " + d.total + ".";
+      else msg += " (sin pista de audio emparejada — no se ha tocado audio)";
       if (d.fallidos > 0) {
-        msg += " " + d.fallidos + " no se pudieron aplicar";
+        msg += " " + d.fallidos + " intento(s) fallaron";
         if (d.primerError) msg += ": " + d.primerError;
       }
       decir(msg, d.fallidos > 0 ? "error" : "ok");
