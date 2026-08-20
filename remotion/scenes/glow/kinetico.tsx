@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Audio, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { camaraEn, muelle, rampa } from "../../lienzo/movimiento";
 import { glow } from "./estilo";
 import { sans, serif } from "./fonts";
@@ -8,66 +8,108 @@ import { AcabadoGlow, FondoGlow } from "./piezas";
 // Variante "kinético" de la identidad glow: en vez de una tarjeta de
 // interfaz con un rótulo fijo debajo (ver guion.tsx / GlowDemo), aquí solo
 // hay texto — una frase corta reemplaza a la siguiente en el centro del
-// plano, cada una con su propia entrada (sube + desenfoque, como Rotulo) y
-// salida (funde antes de que llegue la próxima). Nace de adaptar la paleta
-// de un reel de referencia (fondo casi negro + resplandor cálido en vez del
-// verde de producto) al motor que ya existe aquí — no un estilo nuevo, la
-// misma pieza (FondoGlow, AcabadoGlow, muelle/rampa) con `acento` distinto.
+// plano. Nace de adaptar la paleta de un reel de referencia (fondo casi
+// negro + resplandor cálido en vez del verde de producto) al motor que ya
+// existe aquí — no un estilo nuevo, la misma pieza (FondoGlow, AcabadoGlow,
+// muelle/rampa) con `acento` distinto.
 //
-// Reutiliza FondoGlow y AcabadoGlow tal cual; el reveal de frase no
-// reutiliza `Rotulo` de piezas.tsx porque Rotulo no funde de SALIDA (nunca
-// lo necesitó — el demo actual solo tiene un rótulo fijo) y no vale la pena
-// añadirle esa complejidad a un componente que otras piezas ya usan sin
-// necesitarla.
+// Segunda vuelta: las palabras salen UNA A UNA (no la frase entera de
+// golpe) con un "tecleo" — cada palabra dispara su propio golpe de tecla,
+// como el motor de subtítulos (piezas.tsx de scenes/subtitulos/) pero con
+// audio real por palabra, no solo el muelle visual.
 
 /** Igual de blando que el resto de la identidad — nunca rebote, la pieza posa. */
 const POSADO = { damping: 24, stiffness: 140, mass: 0.85 } as const;
+/** Fotogramas entre el arranque de una palabra y la siguiente — tecleo, no cascada lenta. */
+const ESCALONADO_PALABRA = 6;
+const SALIDA_FRAMES = 10;
+/** El sonido de tecla es más corto que el hueco entre palabras, así que no hace falta recortarlo. */
+const SFX_TECLA = staticFile("sfx/tecla.mp3");
+
+export interface TokenKinetico {
+  texto: string;
+  /** La palabra que lleva el color de acento — normalmente la más importante de la frase. */
+  clave?: boolean;
+}
 
 export interface FraseKineticaDef {
   /** Fotograma en el que arranca la entrada. */
   inicio: number;
   /** Duración total en pantalla, entrada+salida incluidas. */
   duracion: number;
-  antes?: string;
-  /** Palabra o grupo de palabras que va en serif itálica con el color de acento. */
-  acento: string;
-  despues?: string;
+  tokens: TokenKinetico[];
 }
 
-const SALIDA_FRAMES = 10;
+const PalabraKinetica: React.FC<{
+  texto: string;
+  clave: boolean;
+  retardo: number;
+  colorAcento: string;
+}> = ({ texto, clave, retardo, colorAcento }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const p = muelle(frame, fps, retardo, POSADO);
+
+  const opacidad = interpolate(p, [0, 0.5], [0, 1], { extrapolateRight: "clamp" });
+  const desenfoque = interpolate(p, [0, 0.6], [6, 0], { extrapolateRight: "clamp" });
+  const color = clave ? colorAcento : glow.color.texto;
+
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        opacity: opacidad,
+        filter: desenfoque > 0.1 ? `blur(${desenfoque}px)` : undefined,
+        transform: `translateY(${interpolate(p, [0, 1], [14, 0])}px)`,
+        fontFamily: clave ? serif : sans,
+        fontStyle: clave ? "italic" : "normal",
+        color: color,
+      }}
+    >
+      {texto}
+    </span>
+  );
+};
 
 const FraseKinetica: React.FC<{ def: FraseKineticaDef; frameLocal: number; colorAcento: string }> = ({
   def,
   frameLocal,
   colorAcento,
 }) => {
-  const { fps } = useVideoConfig();
-  const p = muelle(frameLocal, fps, 0, POSADO);
   const salida = rampa(frameLocal, def.duracion - SALIDA_FRAMES, def.duracion);
-
-  const opacidad = interpolate(p, [0, 0.5], [0, 1], { extrapolateRight: "clamp" }) * (1 - salida);
-  const desenfoqueEntrada = interpolate(p, [0, 0.6], [6, 0], { extrapolateRight: "clamp" });
   const desenfoqueSalida = interpolate(salida, [0, 1], [0, 5]);
 
   return (
     <div
       style={{
         position: "absolute",
-        left: "50%",
+        left: "8%",
+        right: "8%",
         top: "50%",
-        transform: `translate(-50%, -50%) translateY(${interpolate(p, [0, 1], [16, 0])}px)`,
-        opacity: opacidad,
-        filter: `blur(${desenfoqueEntrada + desenfoqueSalida}px)`,
+        transform: "translateY(-50%)",
+        opacity: 1 - salida,
+        filter: desenfoqueSalida > 0.1 ? `blur(${desenfoqueSalida}px)` : undefined,
+        display: "flex",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: "0.3em 0.3em",
         fontFamily: sans,
         fontSize: 46,
-        color: glow.color.texto,
-        whiteSpace: "nowrap",
+        lineHeight: 1.2,
         textAlign: "center",
       }}
     >
-      {def.antes && <span style={glow.font.sans}>{def.antes} </span>}
-      <span style={{ ...glow.font.serifItalica, fontFamily: serif, color: colorAcento }}>{def.acento}</span>
-      {def.despues && <span style={glow.font.sans}> {def.despues}</span>}
+      {def.tokens.map((tok, i) => {
+        const retardo = i * ESCALONADO_PALABRA;
+        return (
+          <React.Fragment key={i}>
+            <PalabraKinetica texto={tok.texto} clave={Boolean(tok.clave)} retardo={retardo} colorAcento={colorAcento} />
+            {/* Un golpe de tecla por palabra, disparado justo cuando arranca su muelle — Sequence recorta el
+                audio para que no se oiga más allá de la duración del clip aunque la palabra sea la última. */}
+            {frameLocal >= retardo && frameLocal < retardo + 6 && <Audio src={SFX_TECLA} startFrom={0} volume={0.7} />}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 };
@@ -83,13 +125,24 @@ export const KINETICO_ROJO: EstiloKinetico = {
   acentoSuave: "rgba(255, 90, 69, 0.16)",
 };
 
+/** Amarillo de marca (#FFC300, igual que remotion/scenes/contexto/) — para anclar este motor a un vídeo de la identidad Modula. */
+export const KINETICO_AMARILLO: EstiloKinetico = {
+  acento: "#FFC300",
+  acentoSuave: "rgba(255, 195, 0, 0.16)",
+};
+
 export const DURACION_KINETICO_DEMO = 210;
 
+function palabras(frase: string, clave?: string): TokenKinetico[] {
+  const claveNorm = clave ? clave.toUpperCase() : null;
+  return frase.split(" ").map((texto) => ({ texto, clave: claveNorm ? texto.toUpperCase() === claveNorm : false }));
+}
+
 const FRASES_DEMO: FraseKineticaDef[] = [
-  { inicio: 0, duracion: 55, antes: "así se ve", acento: "el texto", despues: "en movimiento" },
-  { inicio: 50, duracion: 50, acento: "sube", despues: "y se desenfoca al entrar" },
-  { inicio: 95, duracion: 55, antes: "listo para", acento: "cualquier titular", despues: "corto" },
-  { inicio: 145, duracion: 65, acento: "una frase", despues: "a la vez, nunca dos" },
+  { inicio: 0, duracion: 55, tokens: palabras("así se ve el texto", "texto") },
+  { inicio: 50, duracion: 50, tokens: palabras("sube y se desenfoca", "sube") },
+  { inicio: 95, duracion: 55, tokens: palabras("listo para cualquier titular", "titular") },
+  { inicio: 145, duracion: 65, tokens: palabras("una frase a la vez", "frase") },
 ];
 
 /**
@@ -111,6 +164,32 @@ export const GlowKineticoDemo: React.FC<{ estilo?: EstiloKinetico }> = ({ estilo
         return <FraseKinetica key={i} def={def} frameLocal={frameLocal} colorAcento={estilo.acento} />;
       })}
       <AcabadoGlow />
+    </AbsoluteFill>
+  );
+};
+
+/**
+ * Composición genérica: UNA sola frase por render (no una secuencia de
+ * varias como el demo) — es la que usa el render de un ancla concreta de
+ * un vídeo real. `fondoPreview` sigue el mismo contrato que subtitulos/
+ * guion.tsx: con fondo para verlo en la web, sin fondo (canal alfa) para
+ * el archivo que se monta en Premiere.
+ */
+export const GlowKineticoFrase: React.FC<{
+  tokens: TokenKinetico[];
+  duracion: number;
+  estilo?: EstiloKinetico;
+  fondoPreview?: boolean;
+}> = ({ tokens, duracion, estilo = KINETICO_AMARILLO, fondoPreview = true }) => {
+  const frame = useCurrentFrame();
+  const camara = camaraEn(frame, duracion, { dx: 14, dy: -8, zoom: 1.015 });
+  const def: FraseKineticaDef = { inicio: 0, duracion, tokens };
+
+  return (
+    <AbsoluteFill>
+      {fondoPreview && <FondoGlow camara={camara} acento={estilo.acento} acentoSuave={estilo.acentoSuave} />}
+      <FraseKinetica def={def} frameLocal={frame} colorAcento={estilo.acento} />
+      {fondoPreview && <AcabadoGlow />}
     </AbsoluteFill>
   );
 };

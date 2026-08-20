@@ -3,7 +3,7 @@ import { Composition } from "remotion";
 import { ANIMACIONES, Animacion } from "./scenes/contexto/guion";
 import { contexto } from "./scenes/contexto/estilo";
 import { DURACION_DEMO as GLOW_DURACION, GlowDemo } from "./scenes/glow/guion";
-import { DURACION_KINETICO_DEMO, GlowKineticoDemo } from "./scenes/glow/kinetico";
+import { DURACION_KINETICO_DEMO, GlowKineticoDemo, GlowKineticoFrase, KINETICO_AMARILLO } from "./scenes/glow/kinetico";
 import { glow } from "./scenes/glow/estilo";
 import { DURACION_TOTAL as REEL_DURACION, ReelLimpio } from "./scenes/reel/guion";
 import { reel } from "./scenes/reel/estilo";
@@ -100,6 +100,22 @@ export const RemotionRoot: React.FC = () => {
         fps={glow.canvas.fps}
         width={glow.canvas.width}
         height={glow.canvas.height}
+      />
+
+      {/* Composición dinámica: UNA frase kinética por render, anclada a un
+          tiempo concreto de la transcripción de un vídeo ya grabado — la
+          usa scripts/render-glow-kinetico.mjs. Paleta amarilla Modula por
+          defecto aquí (la roja es solo la del demo). */}
+      <Composition
+        id="glow-kinetico-frase"
+        component={GlowKineticoFrase}
+        defaultProps={{ tokens: [], duracion: 60, estilo: KINETICO_AMARILLO, fondoPreview: true }}
+        fps={glow.canvas.fps}
+        width={glow.canvas.width}
+        height={glow.canvas.height}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(15, (props.duracion as number) ?? 60),
+        })}
       />
 
       {/* ── Subtítulos animados: un par (preview/overlay) por cada estilo
