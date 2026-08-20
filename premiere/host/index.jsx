@@ -50,6 +50,16 @@ function aSegundos(t) {
   return parseFloat(t);
 }
 
+/**
+ * Segundos → string de ticks, para pasarle un tiempo a métodos QE que lo
+ * esperan en la unidad interna de Premiere (razor, por ejemplo). Un string
+ * decimal de segundos NO lanza error al pasarlo — la API no valida el
+ * formato — pero tampoco corta nada: en la práctica lo trata como ~0.
+ */
+function aTicksString(segundos) {
+  return String(Math.round(segundos * QE_TICKS_POR_SEGUNDO));
+}
+
 /** ¿Hay un proyecto abierto? Sin esto, todo lo demás falla con errores crípticos. */
 function sccEstado() {
   try {
@@ -275,13 +285,14 @@ function sccRecortarSilencios(pista, rangosJson) {
         var numItemsAntes = qeTrack.numItems;
 
         // Dos cuchillas: una al inicio del silencio, otra al final. El
-        // trozo que queda entre ambas es el silencio suelto. El tiempo se
-        // manda como STRING, no como number — la API QE (histórica, no la
-        // DOM moderna) es quisquillosa con esto en varias de sus versiones.
-        qeTrack.razor(String(r.inicioSeg));
+        // trozo que queda entre ambas es el silencio suelto. El tiempo va
+        // como STRING DE TICKS (confirmado por un fallo real: un string de
+        // segundos decimales no lanzaba error pero tampoco cortaba nada —
+        // la API lo interpretaba como ~0 ticks).
+        qeTrack.razor(aTicksString(r.inicioSeg));
         var numItemsTrasInicio = qeTrack.numItems;
         paso = "razor(fin)";
-        qeTrack.razor(String(r.finSeg));
+        qeTrack.razor(aTicksString(r.finSeg));
         var numItemsTrasFin = qeTrack.numItems;
 
         paso = "buscar clip tras el razor";
