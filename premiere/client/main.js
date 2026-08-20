@@ -929,6 +929,69 @@ function pintarSilencios(silencios) {
   });
 }
 
+// Genera el vídeo ya recortado con ffmpeg — el camino fiable, ver la
+// cabecera de src/lib/silencios/recortar.ts. No toca la secuencia de
+// Premiere para nada; el resultado se importa/inserta como cualquier otro
+// recurso, con los botones de siempre.
+estado.recorteGenerado = null; // { previewPath/filePath: la ruta relativa del vídeo ya recortado }
+
+$("#generarRecorteBtn").onclick = function () {
+  if (!estado.archivoSilencios || !estado.silenciosDetectados) return;
+
+  var marcados = Array.prototype.slice
+    .call(document.querySelectorAll("#silenciosLista input:checked"))
+    .map(function (chk) {
+      return estado.silenciosDetectados[parseInt(chk.dataset.indice, 10)];
+    });
+
+  if (!marcados.length) {
+    decir("No hay ningún silencio marcado para recortar.", "error");
+    return;
+  }
+
+  $("#generarRecorteBtn").disabled = true;
+  decir("Generando el vídeo recortado (puede tardar según la duración)…");
+
+  fetch(API + "/api/ai/silencios/recortar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ localPath: estado.archivoSilencios.ruta, silencios: marcados }),
+  })
+    .then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) throw new Error(j.error || "Fallo al recortar el vídeo.");
+        return j;
+      });
+    })
+    .then(function (res) {
+      estado.recorteGenerado = res;
+      $("#recorteGeneradoPreview").src = API + "/api/media/" + res.filePath;
+      $("#recorteGenerado").classList.remove("oculto");
+      decir(
+        res.tramosConservados + " tramo(s) conservados, " + res.silenciosQuitados + " silencio(s) fuera.",
+        "ok"
+      );
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    })
+    .finally(function () {
+      $("#generarRecorteBtn").disabled = false;
+    });
+};
+
+$("#recorteGeneradoImportar").onclick = function () {
+  if (!estado.recorteGenerado) return;
+  importar([{ filePath: estado.recorteGenerado.filePath }]);
+};
+$("#recorteGeneradoInsertar").onclick = function () {
+  if (!estado.recorteGenerado) return;
+  insertar({ filePath: estado.recorteGenerado.filePath });
+};
+
+// ── Avanzado (experimental): recorte directo en la secuencia vía QE ────────
+// Se deja disponible detrás de un <details> para quien quiera curiosear,
+// pero no es el camino recomendado — ver el aviso en index.html.
 $("#aplicarRecorteBtn").onclick = function () {
   if (!estado.archivoSilencios || !estado.silenciosDetectados) return;
 

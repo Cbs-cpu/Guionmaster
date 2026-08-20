@@ -69,8 +69,9 @@
     <section id="vistaSilencios" class="vista oculto">
       <div class="transcribir">
         <p class="ayuda">
-          Detecta huecos de silencio en el audio del clip y recórtalos con ripple — revisa la lista antes de
-          aplicar nada, no se toca la secuencia hasta que pulses "Aplicar recorte".
+          Detecta huecos de silencio en el audio del clip y genera un vídeo YA RECORTADO con ffmpeg — no
+          toca tu secuencia de Premiere para nada, tú decides cuándo y dónde insertarlo con los botones de
+          siempre.
         </p>
 
         <button id="usarClipSilencios" class="btn primario ancho">Usar el clip bajo el cursor</button>
@@ -81,8 +82,27 @@
         <div id="silenciosResultado" class="oculto">
           <p id="silenciosResumen" class="ayuda"></p>
           <div id="silenciosLista" class="silencios-lista"></div>
-          <button id="aplicarRecorteBtn" class="btn primario ancho">Aplicar recorte (ripple)</button>
+          <button id="generarRecorteBtn" class="btn primario ancho">Generar vídeo recortado</button>
+
+          <details class="silencios-avanzado">
+            <summary>Avanzado: recortar la secuencia directamente (experimental, poco fiable)</summary>
+            <p class="ayuda">
+              Corta con ripple dentro de la propia secuencia en vez de generar un archivo nuevo. Verificado
+              en vivo contra Premiere real: los cortes aterrizan en posiciones erráticas (desfases de hasta
+              1.6s sin patrón corregible) — úsalo solo para curiosear, no para un montaje de verdad.
+            </p>
+            <button id="aplicarRecorteBtn" class="btn ancho">Aplicar recorte (ripple)</button>
+          </details>
+
           <pre id="silenciosLog" class="silencios-log oculto"></pre>
+        </div>
+
+        <div id="recorteGenerado" class="resultado oculto">
+          <video id="recorteGeneradoPreview" muted loop autoplay playsinline controls></video>
+          <div class="resultado-acciones">
+            <button id="recorteGeneradoImportar" class="btn">Importar</button>
+            <button id="recorteGeneradoInsertar" class="btn primario">Insertar</button>
+          </div>
         </div>
       </div>
     </section>
