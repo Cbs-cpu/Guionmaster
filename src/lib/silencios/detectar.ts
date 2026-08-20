@@ -45,7 +45,17 @@ export async function detectarSilencios(
   rutaAbsoluta: string,
   opciones: OpcionesDeteccion = {}
 ): Promise<RangoSilencio[]> {
-  const cfg = { ...POR_DEFECTO, ...opciones };
+  // Fusión campo a campo con `??`, no `{...POR_DEFECTO, ...opciones}`: la
+  // ruta de la API siempre manda las tres claves aunque el panel no las
+  // rellene (quedan `undefined`, no ausentes), y un spread normal SÍ copia
+  // esa clave — pisa el valor por defecto con `undefined` en vez de dejarlo
+  // caer. Mismo fallo ya documentado en agrupar.ts; aquí se coló porque no
+  // se copió esa misma cautela al escribir esta función.
+  const cfg = {
+    umbralDb: opciones.umbralDb ?? POR_DEFECTO.umbralDb,
+    duracionMinSeg: opciones.duracionMinSeg ?? POR_DEFECTO.duracionMinSeg,
+    margenSeg: opciones.margenSeg ?? POR_DEFECTO.margenSeg,
+  };
 
   let stderr = "";
   try {
