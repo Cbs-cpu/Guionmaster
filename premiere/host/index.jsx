@@ -30,6 +30,26 @@ function escapar(texto) {
   return String(texto).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
+/** Ticks por segundo — constante fija del motor de tiempo interno de Premiere. */
+var QE_TICKS_POR_SEGUNDO = 254016000000;
+
+/**
+ * Convierte a segundos un valor de tiempo que puede venir de tres formas
+ * distintas según la API/versión: number plano, Time-like con `.seconds`
+ * numérico (DOM moderna), o `QETime` (API histórica) — que no es number ni
+ * expone `.seconds`, sino `.ticks` como STRING de un entero grande.
+ */
+function aSegundos(t) {
+  if (t === null || t === undefined) return NaN;
+  if (typeof t === "number") return t;
+  if (typeof t.seconds === "number") return t.seconds;
+  if (typeof t.ticks !== "undefined") {
+    var ticks = parseFloat(t.ticks);
+    if (!isNaN(ticks)) return ticks / QE_TICKS_POR_SEGUNDO;
+  }
+  return parseFloat(t);
+}
+
 /** ¿Hay un proyecto abierto? Sin esto, todo lo demás falla con errores crípticos. */
 function sccEstado() {
   try {
@@ -252,13 +272,17 @@ function sccRecortarSilencios(pista, rangosJson) {
       // que si vuelve a fallar, al menos sabremos CUÁL sin adivinar otra vez.
       var paso = "razor(inicio)";
       try {
+        var numItemsAntes = qeTrack.numItems;
+
         // Dos cuchillas: una al inicio del silencio, otra al final. El
         // trozo que queda entre ambas es el silencio suelto. El tiempo se
         // manda como STRING, no como number — la API QE (histórica, no la
         // DOM moderna) es quisquillosa con esto en varias de sus versiones.
         qeTrack.razor(String(r.inicioSeg));
+        var numItemsTrasInicio = qeTrack.numItems;
         paso = "razor(fin)";
         qeTrack.razor(String(r.finSeg));
+        var numItemsTrasFin = qeTrack.numItems;
 
         paso = "buscar clip tras el razor";
         var encontrado = null;
@@ -266,22 +290,16 @@ function sccRecortarSilencios(pista, rangosJson) {
         for (var c = 0; c < qeTrack.numItems; c++) {
           var clip = qeTrack.getItemAt(c);
           if (!clip) continue;
-          // clip.start puede venir como number plano (DOM moderna) o como
-          // algo con `.seconds` (Time-like, API QE histórica) — de ahí que
-          // el intento anterior con parseFloat(clip.start) fallara SIEMPRE
-          // si clip.start era un objeto o un timecode tipo "0:00:05:12"
-          // (parseFloat se para en el primer ":" y da 0, no 5.12).
-          var inicioClip =
-            typeof clip.start === "number"
-              ? clip.start
-              : clip.start && typeof clip.start.seconds === "number"
-                ? clip.start.seconds
-                : parseFloat(clip.start);
+          // Confirmado por un fallo real: clip.start en esta API es un
+          // `QETime` — objeto propio, ni number ni con `.seconds`. Su
+          // tiempo de verdad está en `.ticks` (ver aSegundos arriba).
+          var inicioClip = aSegundos(clip.start);
+          var finClip = aSegundos(clip.end);
           if (!isNaN(inicioClip) && Math.abs(inicioClip - r.inicioSeg) < 0.1) {
             encontrado = clip;
             break;
           }
-          volcado.push(String(clip.start) + " (typeof " + typeof clip.start + ")");
+          volcado.push(inicioClip.toFixed(3) + "→" + finClip.toFixed(3));
         }
         if (encontrado) {
           paso = "remove";
@@ -295,9 +313,13 @@ function sccRecortarSilencios(pista, rangosJson) {
             primerError =
               "No se encontró ningún clip en start=" +
               r.inicioSeg +
-              " tras el razor (numItems=" +
-              qeTrack.numItems +
-              "). Starts vistos: [" +
+              ". numItems antes=" +
+              numItemsAntes +
+              ", tras razor(inicio)=" +
+              numItemsTrasInicio +
+              ", tras razor(fin)=" +
+              numItemsTrasFin +
+              ". Clips vistos (inicio→fin): [" +
               volcado.join(", ") +
               "]";
           }
