@@ -27,6 +27,7 @@ var estado = {
   separador: "\\",
   recursos: [],
   estudioCompleto: null, // el state.state crudo, para agruparPorGuion (aplanarRecursos ya lo destroza)
+  recursosExternosRoot: null, // ruta absoluta de data/recursos-externos, para insertar/importar desde ahí
   categoriaActiva: null,
   pistas: 0,
   vista: "recursos",
@@ -519,8 +520,185 @@ for (var si = 0; si < botonesSubvista.length; si++) {
     $("#pestanas").classList.toggle("oculto", estado.recursosVista !== "categoria");
     $("#lista").classList.toggle("oculto", estado.recursosVista !== "categoria");
     $("#listaGuiones").classList.toggle("oculto", estado.recursosVista !== "guion");
+    $("#listaExternos").classList.toggle("oculto", estado.recursosVista !== "externos");
     if (estado.recursosVista === "guion") pintarGuiones();
+    if (estado.recursosVista === "externos") cargarExternos();
   };
+}
+
+// ── Recursos externos ────────────────────────────────────────────────────
+//
+// El kit de LUTs/SFX/overlays/presets/fuentes que el usuario descargó y
+// extrajo en local (data/recursos-externos/, nunca en git — 35 GB). Se lee
+// de /api/system/recursos-externos, no de /api/db/state: no es contenido
+// generado por el estudio, es una carpeta fija en disco. Árbol plegable
+// porque son 2000+ archivos — una lista plana sería inservible.
+
+var externosCargados = null; // cache: no volver a pedir el árbol cada vez que se cambia de subvista
+
+function cargarExternos() {
+  if (externosCargados) {
+    pintarExternos(externosCargados);
+    return;
+  }
+  $("#listaExternos").innerHTML = '<p class="vacio">Leyendo data/recursos-externos…</p>';
+  fetch(API + "/api/system/recursos-externos")
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (d) {
+      if (!d.existe) {
+        $("#listaExternos").innerHTML =
+          '<p class="vacio">No existe data/recursos-externos todavía — pásame el kit y lo extraigo ahí.</p>';
+        return;
+      }
+      externosCargados = d.arbol;
+      estado.recursosExternosRoot = d.raiz;
+      pintarExternos(externosCargados);
+    })
+    .catch(function (e) {
+      $("#listaExternos").innerHTML = '<p class="vacio">Error leyendo recursos externos: ' + e.message + "</p>";
+    });
+}
+
+function formatoBytes(n) {
+  if (!n) return "0 B";
+  var u = ["B", "KB", "MB", "GB"];
+  var i = 0;
+  while (n >= 1024 && i < u.length - 1) {
+    n /= 1024;
+    i++;
+  }
+  return n.toFixed(n >= 10 || i === 0 ? 0 : 1) + " " + u[i];
+}
+
+/** Solo estas extensiones tienen sentido para Importar/Insertar en Premiere — el resto (LUTs, presets, fuentes) se enseña, pero sin botones que fallarían. */
+function esImportablePremiere(nombre) {
+  return /\.(mp4|mov|webm|mp3|wav|aac|m4a|png|jpe?g|webp|gif)$/i.test(nombre);
+}
+
+function pintarExternos(arbol) {
+  var cont = $("#listaExternos");
+  cont.innerHTML = "";
+  if (!arbol.length) {
+    cont.innerHTML = '<p class="vacio">La carpeta está vacía.</p>';
+    return;
+  }
+  arbol.forEach(function (nodo) {
+    cont.appendChild(nodoExterno(nodo, 0));
+  });
+}
+
+function nodoExterno(nodo, profundidad) {
+  if (nodo.tipo === "archivo") {
+    var fila = document.createElement("div");
+    fila.className = "guion-item";
+    fila.style.paddingLeft = 10 + profundidad * 12 + "px";
+
+    var info = document.createElement("div");
+    info.className = "guion-item-info";
+    var t = document.createElement("div");
+    t.className = "guion-item-titulo";
+    t.textContent = nodo.nombre;
+    info.appendChild(t);
+    var meta = document.createElement("div");
+    meta.className = "guion-item-sin-ancla";
+    meta.textContent = formatoBytes(nodo.tamanoBytes);
+    info.appendChild(meta);
+    fila.appendChild(info);
+
+    if (esImportablePremiere(nodo.nombre)) {
+      var bImportar = document.createElement("button");
+      bImportar.className = "btn";
+      bImportar.textContent = "Importar";
+      bImportar.onclick = function () {
+        importarExterno(nodo);
+      };
+      fila.appendChild(bImportar);
+
+      if (esVideo(nodo.nombre) || esImagen(nodo.nombre)) {
+        var bInsertar = document.createElement("button");
+        bInsertar.className = "btn primario";
+        bInsertar.textContent = "Insertar";
+        bInsertar.onclick = function () {
+          insertarExterno(nodo);
+        };
+        fila.appendChild(bInsertar);
+      }
+    }
+    return fila;
+  }
+
+  // Carpeta: cabecera plegable + hijos, igual patrón que pintarGuiones().
+  var carpeta = document.createElement("div");
+  carpeta.className = "guion";
+  carpeta.style.marginLeft = profundidad * 6 + "px";
+
+  var cabecera = document.createElement("div");
+  cabecera.className = "guion-cabecera";
+  var titulo = document.createElement("div");
+  titulo.className = "guion-titulo";
+  titulo.textContent = nodo.nombre;
+  var meta = document.createElement("div");
+  meta.className = "guion-meta";
+  meta.textContent = (nodo.totalArchivos || 0) + " archivo(s)";
+  cabecera.appendChild(titulo);
+  cabecera.appendChild(meta);
+
+  var cuerpo = document.createElement("div");
+  cuerpo.className = "guion-cuerpo oculto";
+  (nodo.hijos || []).forEach(function (hijo) {
+    cuerpo.appendChild(nodoExterno(hijo, profundidad + 1));
+  });
+
+  cabecera.onclick = (function (c) {
+    return function () {
+      c.classList.toggle("oculto");
+    };
+  })(cuerpo);
+
+  carpeta.appendChild(cabecera);
+  carpeta.appendChild(cuerpo);
+  return carpeta;
+}
+
+/** Ruta absoluta de disco de un recurso externo — data/recursos-externos ya vive fuera de data/media, así que no vale rutaAbsoluta(). */
+function rutaExternaAbsoluta(nodo) {
+  var raiz = estado.recursosExternosRoot;
+  if (!raiz) return null;
+  var rel = estado.separador === "\\" ? nodo.rutaRelativa.replace(/\//g, "\\") : nodo.rutaRelativa;
+  return raiz + estado.separador + rel;
+}
+
+function importarExterno(nodo) {
+  var ruta = rutaExternaAbsoluta(nodo);
+  if (!ruta) return;
+  decir("Importando " + nodo.nombre + "…");
+  llamarHost("sccImportar", [JSON.stringify([ruta]), "Recursos externos"])
+    .then(function (d) {
+      decir(d.importados + " importado(s) en el bin “" + d.bin + "”", "ok");
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    });
+}
+
+function insertarExterno(nodo) {
+  var ruta = rutaExternaAbsoluta(nodo);
+  if (!ruta) return;
+  var pista = parseInt($("#pista").value, 10);
+  if (isNaN(pista) || pista < 0) {
+    decir("Abre una secuencia en el timeline primero.", "error");
+    return;
+  }
+  decir("Insertando " + nodo.nombre + "…");
+  llamarHost("sccInsertarEnSecuencia", [ruta, pista])
+    .then(function (d) {
+      decir("“" + d.clip + "” insertado en V" + d.pista, "ok");
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    });
 }
 
 function pintarGuiones() {
