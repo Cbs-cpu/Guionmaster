@@ -73,8 +73,14 @@ export async function detectarSilencios(
     // que se sigue intentando parsear en vez de tirar la toalla.
     stderr = error && typeof error === "object" && "stderr" in error ? String((error as { stderr?: string }).stderr) : "";
     if (!stderr.includes("silence_start")) {
+      // El log completo va a la consola del servidor (la terminal de
+      // `npm run dev`) — un mensaje de error en el panel de Premiere tiene
+      // sitio para poco texto, y la causa real de ffmpeg suele estar al
+      // FINAL del log (la última línea antes de morir), no al principio.
+      console.error("[silencios/detectar] ffmpeg falló analizando", rutaAbsoluta, "\n", stderr);
+      const cola = stderr.trim().slice(-800);
       throw new Error(
-        `ffmpeg no pudo analizar el archivo: ${stderr.slice(-500) || (error instanceof Error ? error.message : String(error))}`
+        `ffmpeg no pudo analizar el archivo (log completo en la terminal de "npm run dev"): ...${cola || (error instanceof Error ? error.message : String(error))}`
       );
     }
   }
