@@ -30,19 +30,21 @@ function escapar(texto) {
   return String(texto).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
-/** Ticks por segundo — constante fija del motor de tiempo interno de Premiere. */
+/**
+ * Convierte a segundos un valor de tiempo `QETime` (la API QE histórica,
+ * no la DOM moderna). Confirmado en vivo con el MCP Bridge del propio
+ * usuario contra su Premiere real: un `QETime` NO es number ni expone
+ * `.seconds` — su reflect da `["frames","secs","ticks","timecode"]`, así
+ * que el campo es `.secs`, no `.seconds`. `.ticks` (string de un entero
+ * grande, 254016000000 ticks/segundo) sirve de respaldo si `.secs` no
+ * estuviera.
+ */
 var QE_TICKS_POR_SEGUNDO = 254016000000;
 
-/**
- * Convierte a segundos un valor de tiempo que puede venir de tres formas
- * distintas según la API/versión: number plano, Time-like con `.seconds`
- * numérico (DOM moderna), o `QETime` (API histórica) — que no es number ni
- * expone `.seconds`, sino `.ticks` como STRING de un entero grande.
- */
 function aSegundos(t) {
   if (t === null || t === undefined) return NaN;
   if (typeof t === "number") return t;
-  if (typeof t.seconds === "number") return t.seconds;
+  if (typeof t.secs === "number") return t.secs;
   if (typeof t.ticks !== "undefined") {
     var ticks = parseFloat(t.ticks);
     if (!isNaN(ticks)) return ticks / QE_TICKS_POR_SEGUNDO;
@@ -51,13 +53,20 @@ function aSegundos(t) {
 }
 
 /**
- * Segundos → string de ticks, para pasarle un tiempo a métodos QE que lo
- * esperan en la unidad interna de Premiere (razor, por ejemplo). Un string
- * decimal de segundos NO lanza error al pasarlo — la API no valida el
- * formato — pero tampoco corta nada: en la práctica lo trata como ~0.
+ * Segundos → el string que `Track.razor()` espera de verdad. Confirmado en
+ * vivo, probando varios formatos contra la Premiere real del usuario vía el
+ * MCP Bridge:
+ *   - number (de cualquier magnitud): "Illegal Parameter type", siempre.
+ *   - string de TICKS: no lanza error, pero tampoco corta nada — se trata
+ *     como ~0 en silencio.
+ *   - string de SEGUNDOS con más de ~4 decimales: tampoco corta nada, sin
+ *     error — el parser interno se calla en vez de fallar.
+ *   - string de segundos con 3 decimales o menos: corta bien.
+ * De ahí el redondeo a milisegundos (toFixed(3)) — de sobra para cortes de
+ * silencio, muy por debajo del límite donde el parser deja de funcionar.
  */
-function aTicksString(segundos) {
-  return String(Math.round(segundos * QE_TICKS_POR_SEGUNDO));
+function aRazorString(segundos) {
+  return segundos.toFixed(3);
 }
 
 /** ¿Hay un proyecto abierto? Sin esto, todo lo demás falla con errores crípticos. */
@@ -225,11 +234,15 @@ function sccInsertarEnSecuencia(ruta, indicePista) {
  * Usa la API "QE" (`app.enableQE()`), la capa de scripting histórica de
  * Premiere para edición de clips — no la DOM moderna, que no expone un
  * ripple-delete de rango arbitrario. Es la misma que usan la mayoría de
- * paneles de "quita silencios" que existen para Premiere. AVISO: esta
- * función no se ha podido probar dentro de Premiere de verdad (ver
- * README.md, "Verificado hasta dónde se puede sin abrir Premiere") — si al
- * usarla algo no cuadra, el mensaje de error exacto es lo que hace falta
- * para arreglarlo, no hay forma de adivinarlo desde fuera de la app.
+ * paneles de "quita silencios" que existen para Premiere.
+ *
+ * A diferencia del resto de host/index.jsx, esto SÍ se ha verificado contra
+ * una Premiere real (26.2.0) — vía el MCP Bridge que el usuario ya tenía
+ * instalado, que ejecuta .jsx sueltos dentro de la app y devuelve el
+ * resultado. Así se confirmaron en vivo, con `reflect`, los nombres reales
+ * de los métodos QE (`razor`, `rippleDelete`, no lo que se había supuesto
+ * al principio) y el formato de argumento exacto que espera cada uno —
+ * ver aSegundos/aRazorString arriba para el detalle de cada quirk.
  */
 function sccRecortarSilencios(pista, rangosJson) {
   try {
@@ -286,13 +299,13 @@ function sccRecortarSilencios(pista, rangosJson) {
 
         // Dos cuchillas: una al inicio del silencio, otra al final. El
         // trozo que queda entre ambas es el silencio suelto. El tiempo va
-        // como STRING DE TICKS (confirmado por un fallo real: un string de
-        // segundos decimales no lanzaba error pero tampoco cortaba nada —
-        // la API lo interpretaba como ~0 ticks).
-        qeTrack.razor(aTicksString(r.inicioSeg));
+        // como STRING DE SEGUNDOS con ≤3 decimales — ver aRazorString
+        // arriba para el porqué exacto (confirmado en vivo contra Premiere
+        // real con el MCP Bridge, no adivinado).
+        qeTrack.razor(aRazorString(r.inicioSeg));
         var numItemsTrasInicio = qeTrack.numItems;
         paso = "razor(fin)";
-        qeTrack.razor(aTicksString(r.finSeg));
+        qeTrack.razor(aRazorString(r.finSeg));
         var numItemsTrasFin = qeTrack.numItems;
 
         paso = "buscar clip tras el razor";
@@ -301,9 +314,6 @@ function sccRecortarSilencios(pista, rangosJson) {
         for (var c = 0; c < qeTrack.numItems; c++) {
           var clip = qeTrack.getItemAt(c);
           if (!clip) continue;
-          // Confirmado por un fallo real: clip.start en esta API es un
-          // `QETime` — objeto propio, ni number ni con `.seconds`. Su
-          // tiempo de verdad está en `.ticks` (ver aSegundos arriba).
           var inicioClip = aSegundos(clip.start);
           var finClip = aSegundos(clip.end);
           if (!isNaN(inicioClip) && Math.abs(inicioClip - r.inicioSeg) < 0.1) {
@@ -313,10 +323,12 @@ function sccRecortarSilencios(pista, rangosJson) {
           volcado.push(inicioClip.toFixed(3) + "→" + finClip.toFixed(3));
         }
         if (encontrado) {
-          paso = "remove";
-          // remove(ripple, alignToVideo): con ripple=true todo lo que hay
-          // detrás en esta pista se desplaza para cerrar el hueco.
-          encontrado.remove(true, true);
+          paso = "rippleDelete";
+          // Método propio del clip (confirmado por reflect en vivo) — hace
+          // exactamente lo que dice: borra este trozo y desplaza todo lo
+          // posterior de la pista para cerrar el hueco. Mejor que adivinar
+          // los argumentos de remove(bool, bool).
+          encontrado.rippleDelete();
           cortados++;
         } else {
           fallidos++;
