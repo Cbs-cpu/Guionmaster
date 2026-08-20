@@ -313,6 +313,15 @@ export interface VisualResource {
   model: string;
   /** Ruta relativa dentro de data/media (p. ej. "generated/xyz.png"). */
   filePath: string;
+  /**
+   * Sidecar opcional: ruta relativa a un JSON `[{sfxPath, offsetSeg}]` con
+   * los sonidos sueltos que acompañan a este recurso (tecleo, whoosh…) —
+   * NO horneados en `filePath`, para que el panel los inserte como clips
+   * de audio independientes y editables en su propia pista, en vez de
+   * fijos para siempre dentro del vídeo. Lo escribe
+   * scripts/render-glow-kinetico.mjs; lo consume sccInsertarLoteEnSecuencia.
+   */
+  sonidosPath?: string;
   /** Si acompaña a un capítulo concreto de un vídeo de YouTube. */
   chapterId?: string;
   notes?: string;

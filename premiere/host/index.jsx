@@ -284,15 +284,26 @@ function sccInsertarEnTiempo(ruta, indicePista, tiempoSeg) {
   }
 }
 
+/** Índice de pista de AUDIO válido, o -1 si no existe — hermano de validarPistaVideo. */
+function validarPistaAudio(sec, indicePista) {
+  var pista = typeof indicePista === "number" ? indicePista : parseInt(indicePista, 10);
+  if (isNaN(pista) || pista < 0) pista = 0;
+  if (pista >= sec.audioTracks.numTracks) return -1;
+  return pista;
+}
+
 /**
  * Inserta VARIOS recursos de una sola llamada, cada uno en su tiempo y
  * pista — un "Insertar todo" para las anclas temporales de un guion, en
  * vez de un evalScript por recurso (más lento y más propenso a que el
  * cursor de reproducción se mueva entre medias por accidente).
  *
- * `itemsJson` es un array JSON de `{ruta, pista, tiempoSeg}`. Un fallo en
- * UN item no aborta el resto — se acumulan éxitos/fallos, igual que
- * sccRecortarSilencios.
+ * `itemsJson` es un array JSON de `{ruta, pista, tiempoSeg, tipo}`, donde
+ * `tipo` es "video" (por defecto, para no romper llamadas antiguas) o
+ * "audio" — así una misma llamada puede colocar el vídeo de una animación
+ * Y sus sonidos sueltos (tecleo, whoosh) en su pista de audio, todo en el
+ * mismo lote. Un fallo en UN item no aborta el resto — se acumulan
+ * éxitos/fallos, igual que sccRecortarSilencios.
  */
 function sccInsertarLoteEnSecuencia(itemsJson) {
   try {
@@ -317,10 +328,16 @@ function sccInsertarLoteEnSecuencia(itemsJson) {
       var it = items[i];
       try {
         var item = importarYLocalizar(it.ruta);
-        var pista = validarPistaVideo(sec, it.pista);
-        if (pista < 0) throw new Error("Pista de vídeo inválida: " + it.pista);
         var ticks = String(Math.round(parseFloat(it.tiempoSeg) * TICKS_POR_SEGUNDO));
-        sec.videoTracks[pista].insertClip(item, ticks);
+        if (it.tipo === "audio") {
+          var pistaA = validarPistaAudio(sec, it.pista);
+          if (pistaA < 0) throw new Error("Pista de audio inválida: " + it.pista);
+          sec.audioTracks[pistaA].insertClip(item, ticks);
+        } else {
+          var pistaV = validarPistaVideo(sec, it.pista);
+          if (pistaV < 0) throw new Error("Pista de vídeo inválida: " + it.pista);
+          sec.videoTracks[pistaV].insertClip(item, ticks);
+        }
         insertados++;
       } catch (eItem) {
         fallidos++;

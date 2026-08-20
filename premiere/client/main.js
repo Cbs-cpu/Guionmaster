@@ -201,6 +201,7 @@ function agruparPorGuion(st) {
         id: v.id,
         titulo: v.id.replace(/^visual_anim_/, "").replace(/^visual_/, ""),
         filePath: v.filePath,
+        sonidosPath: v.sonidosPath || null,
         creado: v.createdAt || "",
         ancla: anclasPorRecurso[v.id] || null,
       });
@@ -885,28 +886,71 @@ function pintarGuiones() {
   });
 }
 
-/** Un solo recurso: con ancla, en su tiempo; sin ancla, en el cursor como siempre. */
+/**
+ * Pista de audio donde se insertan el tecleo/whoosh de las animaciones —
+ * A1 por defecto. Sin selector propio en la interfaz todavía: la mayoría
+ * de proyectos tienen sitio de sobra ahí, y añadir un segundo desplegable
+ * solo para esto no compensaba la complejidad hasta que alguien lo pida.
+ */
+var PISTA_AUDIO_SONIDOS = 0;
+
+/**
+ * Sidecar de sonidos de un recurso (ver VisualResource.sonidosPath en
+ * types.ts) → items listos para sccInsertarLoteEnSecuencia, con el tiempo
+ * YA sumado al de la ancla (el sidecar solo trae offsets relativos al
+ * arranque del propio clip). Sin sidecar, devuelve un array vacío — no
+ * todos los recursos llevan sonido suelto.
+ */
+function cargarItemsDeSonido(it, tiempoBaseSeg) {
+  if (!it.sonidosPath) return Promise.resolve([]);
+  return fetch(API + "/api/media/" + it.sonidosPath)
+    .then(function (r) {
+      return r.ok ? r.json() : [];
+    })
+    .then(function (cues) {
+      return cues.map(function (c) {
+        return {
+          tipo: "audio",
+          ruta: rutaAbsoluta(c.sfxPath),
+          pista: PISTA_AUDIO_SONIDOS,
+          tiempoSeg: tiempoBaseSeg + c.offsetSeg,
+        };
+      });
+    })
+    .catch(function () {
+      return []; // un sidecar roto no debe bloquear la inserción del vídeo
+    });
+}
+
+/** Un solo recurso: con ancla, en su tiempo (+ sus sonidos sueltos si los tiene); sin ancla, en el cursor como siempre. */
 function insertarItemDeGuion(it) {
   var pista = parseInt($("#pista").value, 10);
   if (isNaN(pista) || pista < 0) {
     decir("Abre una secuencia en el timeline primero.", "error");
     return;
   }
-  if (it.ancla) {
-    decir("Insertando “" + it.titulo + "” en " + formatoSeg(it.ancla.tiempoSeg) + "…");
-    llamarHost("sccInsertarEnTiempo", [rutaAbsoluta(it.filePath), pista, it.ancla.tiempoSeg])
+  if (!it.ancla) {
+    insertar({ filePath: it.filePath });
+    return;
+  }
+
+  decir("Insertando “" + it.titulo + "” en " + formatoSeg(it.ancla.tiempoSeg) + "…");
+  cargarItemsDeSonido(it, it.ancla.tiempoSeg).then(function (itemsSonido) {
+    var lote = [{ tipo: "video", ruta: rutaAbsoluta(it.filePath), pista: pista, tiempoSeg: it.ancla.tiempoSeg }].concat(
+      itemsSonido
+    );
+    llamarHost("sccInsertarLoteEnSecuencia", [JSON.stringify(lote)])
       .then(function (d) {
-        decir("“" + d.clip + "” insertado en V" + d.pista + " en " + formatoSeg(it.ancla.tiempoSeg), "ok");
+        var msg = d.insertados + " de " + d.total + " insertado(s)" + (itemsSonido.length ? " (vídeo + sonidos)" : "") + ".";
+        decir(msg, d.fallidos > 0 ? "error" : "ok");
       })
       .catch(function (e) {
         decir(e.message, "error");
       });
-  } else {
-    insertar({ filePath: it.filePath });
-  }
+  });
 }
 
-/** Todo lo anclado de un guion, de una sola llamada — sccInsertarLoteEnSecuencia. */
+/** Todo lo anclado de un guion, de una sola llamada — vídeos + sus sonidos sueltos, todo junto vía sccInsertarLoteEnSecuencia. */
 function insertarGuionCompleto(g) {
   var pista = parseInt($("#pista").value, 10);
   if (isNaN(pista) || pista < 0) {
@@ -918,20 +962,29 @@ function insertarGuionCompleto(g) {
   });
   if (!anclados.length) return;
 
-  var lote = anclados.map(function (it) {
-    return { ruta: rutaAbsoluta(it.filePath), pista: pista, tiempoSeg: it.ancla.tiempoSeg };
-  });
-
-  decir("Insertando " + lote.length + " recurso(s) de “" + g.titulo + "”…");
-  llamarHost("sccInsertarLoteEnSecuencia", [JSON.stringify(lote)])
-    .then(function (d) {
-      var msg = d.insertados + " de " + d.total + " insertado(s).";
-      if (d.fallidos > 0) msg += " " + d.fallidos + " fallaron: " + d.primerError;
-      decir(msg, d.fallidos > 0 ? "error" : "ok");
+  decir("Preparando " + anclados.length + " recurso(s) de “" + g.titulo + "”…");
+  Promise.all(
+    anclados.map(function (it) {
+      return cargarItemsDeSonido(it, it.ancla.tiempoSeg);
     })
-    .catch(function (e) {
-      decir(e.message, "error");
+  ).then(function (itemsSonidoPorRecurso) {
+    var lote = [];
+    anclados.forEach(function (it, i) {
+      lote.push({ tipo: "video", ruta: rutaAbsoluta(it.filePath), pista: pista, tiempoSeg: it.ancla.tiempoSeg });
+      lote = lote.concat(itemsSonidoPorRecurso[i]);
     });
+
+    decir("Insertando " + lote.length + " clip(s) (vídeo + sonidos) de “" + g.titulo + "”…");
+    llamarHost("sccInsertarLoteEnSecuencia", [JSON.stringify(lote)])
+      .then(function (d) {
+        var msg = d.insertados + " de " + d.total + " insertado(s).";
+        if (d.fallidos > 0) msg += " " + d.fallidos + " fallaron: " + d.primerError;
+        decir(msg, d.fallidos > 0 ? "error" : "ok");
+      })
+      .catch(function (e) {
+        decir(e.message, "error");
+      });
+  });
 }
 
 // ── Silencios ────────────────────────────────────────────────────────────
