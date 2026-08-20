@@ -262,12 +262,26 @@ function sccRecortarSilencios(pista, rangosJson) {
 
         paso = "buscar clip tras el razor";
         var encontrado = null;
+        var volcado = []; // solo se rellena si no se encuentra nada, para el diagnóstico
         for (var c = 0; c < qeTrack.numItems; c++) {
           var clip = qeTrack.getItemAt(c);
-          if (clip && Math.abs(parseFloat(clip.start) - r.inicioSeg) < 0.05) {
+          if (!clip) continue;
+          // clip.start puede venir como number plano (DOM moderna) o como
+          // algo con `.seconds` (Time-like, API QE histórica) — de ahí que
+          // el intento anterior con parseFloat(clip.start) fallara SIEMPRE
+          // si clip.start era un objeto o un timecode tipo "0:00:05:12"
+          // (parseFloat se para en el primer ":" y da 0, no 5.12).
+          var inicioClip =
+            typeof clip.start === "number"
+              ? clip.start
+              : clip.start && typeof clip.start.seconds === "number"
+                ? clip.start.seconds
+                : parseFloat(clip.start);
+          if (!isNaN(inicioClip) && Math.abs(inicioClip - r.inicioSeg) < 0.1) {
             encontrado = clip;
             break;
           }
+          volcado.push(String(clip.start) + " (typeof " + typeof clip.start + ")");
         }
         if (encontrado) {
           paso = "remove";
@@ -277,7 +291,16 @@ function sccRecortarSilencios(pista, rangosJson) {
           cortados++;
         } else {
           fallidos++;
-          if (!primerError) primerError = "No se encontró ningún clip en start=" + r.inicioSeg + " tras el razor (numItems=" + qeTrack.numItems + ").";
+          if (!primerError) {
+            primerError =
+              "No se encontró ningún clip en start=" +
+              r.inicioSeg +
+              " tras el razor (numItems=" +
+              qeTrack.numItems +
+              "). Starts vistos: [" +
+              volcado.join(", ") +
+              "]";
+          }
         }
       } catch (eRango) {
         fallidos++;
