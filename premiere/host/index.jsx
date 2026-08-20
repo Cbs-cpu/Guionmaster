@@ -54,19 +54,25 @@ function aSegundos(t) {
 
 /**
  * Segundos → el string que `Track.razor()` espera de verdad. Confirmado en
- * vivo, probando varios formatos contra la Premiere real del usuario vía el
- * MCP Bridge:
- *   - number (de cualquier magnitud): "Illegal Parameter type", siempre.
- *   - string de TICKS: no lanza error, pero tampoco corta nada — se trata
- *     como ~0 en silencio.
- *   - string de SEGUNDOS con más de ~4 decimales: tampoco corta nada, sin
- *     error — el parser interno se calla en vez de fallar.
- *   - string de segundos con 3 decimales o menos: corta bien.
- * De ahí el redondeo a milisegundos (toFixed(3)) — de sobra para cortes de
- * silencio, muy por debajo del límite donde el parser deja de funcionar.
+ * vivo, probando decenas de formatos contra la Premiere real del usuario
+ * vía el MCP Bridge — no es cuestión de precisión decimal como se pensó al
+ * principio, es un LÍMITE DE 6 CARACTERES en el string, a secas:
+ *   - number (cualquier magnitud): "Illegal Parameter type", siempre.
+ *   - string de TICKS: no lanza error, pero tampoco corta nada.
+ *   - string de ≤6 caracteres ("10", "20.5", "40.555"...): corta bien.
+ *   - string de ≥7 caracteres ("50.5555", "60.55555"...): no lanza error,
+ *     pero tampoco corta nada — el parser interno se calla en silencio en
+ *     vez de fallar. Confirmado con pruebas dirigidas: 6 va, 7 no, siempre.
+ * De ahí que los decimales se recorten según cuántos dígitos ya ocupa la
+ * parte entera, para no pasar nunca de 6 caracteres en total — muy por
+ * encima de la precisión de un fotograma, así que no se pierde nada real.
  */
 function aRazorString(segundos) {
-  return segundos.toFixed(3);
+  var digitosEnteros = String(Math.floor(Math.abs(segundos))).length;
+  var decimales = 6 - digitosEnteros - 1; // -1 por el punto decimal
+  if (decimales > 4) decimales = 4; // no hace falta más que eso para nada
+  if (decimales < 0) decimales = 0;
+  return segundos.toFixed(decimales);
 }
 
 /** ¿Hay un proyecto abierto? Sin esto, todo lo demás falla con errores crípticos. */
