@@ -1288,6 +1288,7 @@ $("#transcribirBtn").onclick = function () {
       // segundo clip sin recargar el panel entero. El "?t=" fuerza la
       // recarga aunque la URL base ya fuera la misma de antes.
       $("#previewFrame").src = API + "/premiere-preview/subtitulos?t=" + Date.now();
+      $("#transcripcionTexto").value = formatoTranscripcion(l.lineas);
       decir(l.lineas.length + " línea(s) — elige estilo y pulsa generar cuando estés conforme.", "ok");
     })
     .catch(function (e) {
@@ -1295,6 +1296,44 @@ $("#transcribirBtn").onclick = function () {
     })
     .finally(function () {
       $("#transcribirBtn").disabled = false;
+    });
+};
+
+/**
+ * Las líneas ya agrupadas (estado.lineas, en FOTOGRAMAS a 30fps — ver
+ * agrupar.ts) en texto plano con marca de tiempo, para copiar y pegar en
+ * el chat. El formato es deliberadamente simple ("[12.3s] texto de la
+ * línea"), no SRT de verdad: aquí lo que hace falta es que Claude pueda
+ * leerlo y que un humano también, no que lo abra un reproductor de vídeo.
+ */
+function formatoTranscripcion(lineas) {
+  var FPS = 30;
+  return lineas
+    .map(function (l) {
+      var seg = l.inicio / FPS;
+      var texto = l.tokens
+        .map(function (t) {
+          return t.texto;
+        })
+        .join(" ");
+      return "[" + seg.toFixed(1) + "s] " + texto;
+    })
+    .join("\n");
+}
+
+$("#copiarTranscripcionBtn").onclick = function () {
+  var texto = $("#transcripcionTexto").value;
+  if (!texto) return;
+  // navigator.clipboard funciona en el panel (Chromium normal) — sin eso,
+  // el usuario tendría que seleccionar el texto a mano en el textarea.
+  navigator.clipboard
+    .writeText(texto)
+    .then(function () {
+      decir("Transcripción copiada — pégasela a Claude en el chat.", "ok");
+    })
+    .catch(function () {
+      $("#transcripcionTexto").select();
+      decir("No se pudo copiar solo — el texto ya está seleccionado, Ctrl+C.", "error");
     });
 };
 

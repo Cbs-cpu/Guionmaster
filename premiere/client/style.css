@@ -478,6 +478,20 @@ body {
   margin: 6px 0;
 }
 
+.transcripcion-texto {
+  width: 100%;
+  background: #0b0d0b;
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+  color: var(--texto);
+  font-size: 10.5px;
+  font-family: "Consolas", "Courier New", monospace;
+  line-height: 1.6;
+  padding: 8px;
+  resize: vertical;
+  margin-bottom: 6px;
+}
+
 .silencios-log {
   margin-top: 8px;
   padding: 8px;

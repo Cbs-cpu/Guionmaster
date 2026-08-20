@@ -140,6 +140,16 @@
           <button id="generarBtn" class="btn primario ancho">
             Generar archivo final (con canal alfa)
           </button>
+
+          <details class="silencios-avanzado" open>
+            <summary>Transcripción — cópiala y pégasela a Claude para que genere los recursos</summary>
+            <p class="ayuda">
+              Texto de la transcripción con marca de tiempo por línea. Pégalo en el chat cuando le pidas a
+              Claude las animaciones/infografías de este vídeo — así sabe qué se dice y en qué segundo exacto.
+            </p>
+            <textarea id="transcripcionTexto" class="transcripcion-texto" readonly rows="6"></textarea>
+            <button id="copiarTranscripcionBtn" class="btn ancho">Copiar transcripción</button>
+          </details>
         </div>
 
         <div id="transcribirResultado" class="resultado oculto">

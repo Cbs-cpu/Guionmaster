@@ -26,7 +26,12 @@ export async function aplicarLutAVideo(rutaEntrada: string, rutaLut: string, rut
   const filtro = `lut3d=file='${escaparRutaParaFiltro(rutaLut)}'`;
   await execFileAsync(
     "ffmpeg",
-    ["-y", "-i", rutaEntrada, "-vf", filtro, "-c:v", "libx264", "-crf", "16", "-preset", "medium", "-c:a", "copy", rutaSalida],
+    // "veryfast" en vez de "medium": esto es una previsualización con color
+    // aplicado, no la entrega final — un archivo un poco más grande a
+    // cambio de un preset mucho más rápido (3-5x) es el cambio correcto
+    // aquí. Si algún día hace falta comprimir de verdad, ya se recodifica
+    // al exportar desde Premiere, con el clip ya sustituido en el timeline.
+    ["-y", "-i", rutaEntrada, "-vf", filtro, "-c:v", "libx264", "-crf", "18", "-preset", "veryfast", "-c:a", "copy", rutaSalida],
     { timeout: 20 * 60 * 1000, maxBuffer: 32 * 1024 * 1024 }
   ).catch((error) => {
     const stderr = error && typeof error === "object" && "stderr" in error ? String((error as { stderr?: string }).stderr) : "";
