@@ -22,14 +22,28 @@ export interface OpcionesDeteccion {
   umbralDb?: number;
   /** Segundos mínimos de silencio seguido para contar como corte. */
   duracionMinSeg?: number;
-  /** Margen que se resta a cada lado del rango detectado, para no comerse el ataque/cola de la palabra. */
+  /**
+   * Margen que se resta a cada lado del rango detectado — lo que queda de
+   * silencio SIN cortar en cada punto de corte, para que suene como una
+   * respiración natural en vez de un salto seco. 0.12s se sentía a golpe
+   * de robot; 0.18 ya se nota como una pausa real.
+   */
   margenSeg?: number;
+  /**
+   * Si dos silencios detectados quedan separados por menos de esto de
+   * palabra hablada, se fusionan en un único corte — esa palabra suelta
+   * de menos de medio segundo entre dos silencios es casi siempre ruido
+   * de fondo o una muletilla cortada a medias, y dejarla como su propio
+   * fragmento entre dos cortes es lo que se notaba como "microrecorte".
+   */
+  distanciaMinSeg?: number;
 }
 
 const POR_DEFECTO: Required<OpcionesDeteccion> = {
   umbralDb: -32,
-  duracionMinSeg: 0.5,
-  margenSeg: 0.12,
+  duracionMinSeg: 0.6,
+  margenSeg: 0.18,
+  distanciaMinSeg: 0.4,
 };
 
 const RE_INICIO = /silence_start:\s*(-?[\d.]+)/;
@@ -55,6 +69,7 @@ export async function detectarSilencios(
     umbralDb: opciones.umbralDb ?? POR_DEFECTO.umbralDb,
     duracionMinSeg: opciones.duracionMinSeg ?? POR_DEFECTO.duracionMinSeg,
     margenSeg: opciones.margenSeg ?? POR_DEFECTO.margenSeg,
+    distanciaMinSeg: opciones.distanciaMinSeg ?? POR_DEFECTO.distanciaMinSeg,
   };
 
   let stderr = "";
@@ -113,11 +128,29 @@ export async function detectarSilencios(
     }
   }
 
-  // Margen: se aplica DESPUÉS de calcular duracionSeg (con la duración real
-  // detectada, no la recortada) para que la duración informada al usuario
-  // sea la real, aunque el rango que se vaya a cortar sea un pelín más
-  // corto por seguridad.
-  return rangos
+  // Fusión: dos silencios separados por menos de `distanciaMinSeg` de
+  // palabra hablada se tratan como UNO — esa palabra suelta de menos de
+  // medio segundo entre dos cortes es lo que se sentía como "microrecorte"
+  // (un fragmento de vídeo casi invisible entre dos saltos, que el ojo lee
+  // como un tartamudeo del montaje, no como una palabra de verdad). Los
+  // silencios ya llegan ordenados por tiempo (así los escribe ffmpeg).
+  const fusionados: RangoSilencio[] = [];
+  for (const r of rangos) {
+    const anterior = fusionados[fusionados.length - 1];
+    if (anterior && r.inicioSeg - anterior.finSeg < cfg.distanciaMinSeg) {
+      anterior.finSeg = r.finSeg;
+      anterior.duracionSeg = anterior.finSeg - anterior.inicioSeg;
+    } else {
+      fusionados.push({ ...r });
+    }
+  }
+
+  // Margen: se aplica DESPUÉS de fusionar y de calcular duracionSeg (con la
+  // duración real detectada, no la recortada) para que la duración
+  // informada al usuario sea la real, aunque el rango que se vaya a cortar
+  // sea un pelín más corto por seguridad — y para que quede un resto de
+  // silencio real a cada lado del corte (una respiración, no un salto seco).
+  return fusionados
     .map((r) => ({
       inicioSeg: Math.max(0, r.inicioSeg + cfg.margenSeg),
       finSeg: Math.max(0, r.finSeg - cfg.margenSeg),
