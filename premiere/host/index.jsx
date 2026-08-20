@@ -179,6 +179,101 @@ function sccInsertarEnSecuencia(ruta, indicePista) {
   }
 }
 
+/**
+ * Recorta de la secuencia activa una lista de rangos de silencio, en la
+ * pista de vídeo indicada, con ripple (todo lo posterior se pega hacia
+ * delante para no dejar huecos).
+ *
+ * `rangosJson` es un array JSON de `{inicioSeg, finSeg}` EN TIEMPO DE
+ * SECUENCIA (el panel ya ha convertido los tiempos de silencedetect, que
+ * son relativos al archivo de origen, sumando `clip.start` y restando
+ * `clip.inPoint` — ver mandarRecortarSilencios en main.js). No se tocan las
+ * pistas de audio por separado: en Premiere, al hacer ripple sobre un clip
+ * enlazado (vídeo+audio del mismo archivo), el audio vinculado se mueve
+ * solo con el vídeo.
+ *
+ * Usa la API "QE" (`app.enableQE()`), la capa de scripting histórica de
+ * Premiere para edición de clips — no la DOM moderna, que no expone un
+ * ripple-delete de rango arbitrario. Es la misma que usan la mayoría de
+ * paneles de "quita silencios" que existen para Premiere. AVISO: esta
+ * función no se ha podido probar dentro de Premiere de verdad (ver
+ * README.md, "Verificado hasta dónde se puede sin abrir Premiere") — si al
+ * usarla algo no cuadra, el mensaje de error exacto es lo que hace falta
+ * para arreglarlo, no hay forma de adivinarlo desde fuera de la app.
+ */
+function sccRecortarSilencios(pista, rangosJson) {
+  try {
+    if (!app.project) {
+      return respuesta(false, null, "No hay ningún proyecto abierto en Premiere.");
+    }
+    var sec = app.project.activeSequence;
+    if (!sec) {
+      return respuesta(false, null, "No hay ninguna secuencia activa. Abre una en el timeline.");
+    }
+
+    var rangos = eval("(" + rangosJson + ")");
+    if (!rangos || !rangos.length) {
+      return respuesta(false, null, "No se ha recibido ningún rango que recortar.");
+    }
+
+    app.enableQE();
+    var qeSec = qe.project.getActiveSequence();
+    if (!qeSec) {
+      return respuesta(false, null, "No se ha podido acceder a la secuencia por la API QE de Premiere.");
+    }
+
+    var indicePista = typeof pista === "number" ? pista : parseInt(pista, 10);
+    if (isNaN(indicePista) || indicePista < 0) indicePista = 0;
+    var qeTrack = qeSec.getVideoTrackAt(indicePista);
+    if (!qeTrack) {
+      return respuesta(false, null, "No existe la pista de vídeo V" + (indicePista + 1) + " en la API QE.");
+    }
+
+    // De más tarde a más temprano: al recortar por el final primero, las
+    // posiciones de los rangos que aún no se han tocado no se mueven —
+    // recortar de temprano a tarde obligaría a recalcular cada rango
+    // siguiente después de cada ripple.
+    rangos.sort(function (a, b) {
+      return b.inicioSeg - a.inicioSeg;
+    });
+
+    var cortados = 0;
+    var fallidos = 0;
+    for (var i = 0; i < rangos.length; i++) {
+      var r = rangos[i];
+      try {
+        // Dos cuchillas: una al inicio del silencio, otra al final. El
+        // trozo que queda entre ambas es el silencio suelto.
+        qeTrack.razor(r.inicioSeg);
+        qeTrack.razor(r.finSeg);
+
+        var encontrado = null;
+        for (var c = 0; c < qeTrack.numItems; c++) {
+          var clip = qeTrack.getItemAt(c);
+          if (clip && Math.abs(parseFloat(clip.start) - r.inicioSeg) < 0.05) {
+            encontrado = clip;
+            break;
+          }
+        }
+        if (encontrado) {
+          // remove(ripple, alignToVideo): con ripple=true todo lo que hay
+          // detrás en esta pista se desplaza para cerrar el hueco.
+          encontrado.remove(true, true);
+          cortados++;
+        } else {
+          fallidos++;
+        }
+      } catch (eRango) {
+        fallidos++;
+      }
+    }
+
+    return respuesta(true, '{"cortados":' + cortados + ',"fallidos":' + fallidos + ',"total":' + rangos.length + "}");
+  } catch (e) {
+    return respuesta(false, null, e.toString());
+  }
+}
+
 /** Cuántas pistas de vídeo tiene la secuencia activa, para poblar el selector del panel. */
 function sccPistas() {
   try {
@@ -256,6 +351,14 @@ function sccClipPrincipal() {
               t +
               ',"totalPistas":' +
               sec.videoTracks.numTracks +
+              // Con esto el panel puede convertir tiempos del ARCHIVO de
+              // origen (lo que devuelve /api/ai/silencios/detectar, que
+              // analiza el archivo directo) a tiempo de SECUENCIA:
+              // tiempoSecuencia = clipStartSeg + (tiempoArchivo - clipInPointSeg).
+              ',"clipStartSeg":' +
+              clip.start.seconds +
+              ',"clipInPointSeg":' +
+              clip.inPoint.seconds +
               "}"
           );
         }

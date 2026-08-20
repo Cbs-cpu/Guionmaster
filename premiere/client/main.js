@@ -33,6 +33,8 @@ var estado = {
   transcripcion: null, // { filePath, palabras }
   lineas: null, // líneas ya agrupadas (sin renderizar), para el preview en vivo
   generado: null, // { previewPath, filePath }
+  archivoSilencios: null, // { ruta, nombre, pista, clipStartSeg, clipInPointSeg }
+  silenciosDetectados: null, // [{inicioSeg, finSeg, duracionSeg}], tiempo del ARCHIVO de origen
 };
 
 // ── Categorías ───────────────────────────────────────────────────────────
@@ -427,9 +429,141 @@ for (var vi = 0; vi < botonesVista.length; vi++) {
       botonesVista[j].classList.toggle("activa", botonesVista[j] === this);
     }
     $("#vistaRecursos").classList.toggle("oculto", estado.vista !== "recursos");
+    $("#vistaSilencios").classList.toggle("oculto", estado.vista !== "silencios");
     $("#vistaTranscribir").classList.toggle("oculto", estado.vista !== "transcribir");
   };
 }
+
+// ── Silencios ────────────────────────────────────────────────────────────
+//
+// Tres pasos: elegir clip → detectar (llama a /api/ai/silencios/detectar,
+// que analiza el ARCHIVO de origen con ffmpeg — no toca Premiere) → revisar
+// y aplicar (llama a sccRecortarSilencios, que sí edita la secuencia, y solo
+// tras pulsar el botón). Los tiempos que devuelve la detección son del
+// archivo de origen; se convierten a tiempo de SECUENCIA con
+// clipStartSeg + (tiempoArchivo - clipInPointSeg) antes de mandarlos a
+// ExtendScript, porque en el timeline lo único que importa es dónde cae ese
+// silencio en la secuencia, no en el archivo.
+
+function formatoSeg(s) {
+  return s.toFixed(2) + "s";
+}
+
+$("#usarClipSilencios").onclick = function () {
+  llamarHost("sccClipPrincipal", [])
+    .then(function (d) {
+      estado.archivoSilencios = {
+        ruta: d.ruta,
+        nombre: d.nombre,
+        pista: d.pista,
+        clipStartSeg: d.clipStartSeg,
+        clipInPointSeg: d.clipInPointSeg,
+      };
+      $("#archivoSilencios").textContent = d.nombre + " (pista V" + (d.pista + 1) + ")";
+      $("#detectarBtn").disabled = false;
+      $("#silenciosResultado").classList.add("oculto");
+      estado.silenciosDetectados = null;
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    });
+};
+
+$("#detectarBtn").onclick = function () {
+  if (!estado.archivoSilencios) return;
+  $("#detectarBtn").disabled = true;
+  $("#silenciosResultado").classList.add("oculto");
+  decir("Analizando el audio de " + estado.archivoSilencios.nombre + "…");
+
+  fetch(API + "/api/ai/silencios/detectar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ localPath: estado.archivoSilencios.ruta }),
+  })
+    .then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) throw new Error(j.error || "Fallo al detectar silencios.");
+        return j;
+      });
+    })
+    .then(function (res) {
+      estado.silenciosDetectados = res.silencios;
+      pintarSilencios(res.silencios);
+      if (!res.silencios.length) {
+        decir("No se ha detectado ningún silencio con el umbral por defecto.", "ok");
+        return;
+      }
+      $("#silenciosResumen").textContent =
+        res.total + " silencio(s) detectados — " + formatoSeg(res.ahorroSeg) + " recortables en total.";
+      $("#silenciosResultado").classList.remove("oculto");
+      decir(res.total + " silencio(s) encontrados. Revisa la lista antes de aplicar.", "ok");
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    })
+    .finally(function () {
+      $("#detectarBtn").disabled = false;
+    });
+};
+
+function pintarSilencios(silencios) {
+  var cont = $("#silenciosLista");
+  cont.innerHTML = "";
+  silencios.forEach(function (s, i) {
+    var fila = document.createElement("label");
+    fila.className = "silencio-fila";
+    var check = document.createElement("input");
+    check.type = "checkbox";
+    check.checked = true;
+    check.dataset.indice = String(i);
+    var texto = document.createElement("span");
+    texto.textContent = formatoSeg(s.inicioSeg) + " → " + formatoSeg(s.finSeg) + " (" + formatoSeg(s.duracionSeg) + ")";
+    fila.appendChild(check);
+    fila.appendChild(texto);
+    cont.appendChild(fila);
+  });
+}
+
+$("#aplicarRecorteBtn").onclick = function () {
+  if (!estado.archivoSilencios || !estado.silenciosDetectados) return;
+
+  var marcados = Array.prototype.slice
+    .call(document.querySelectorAll("#silenciosLista input:checked"))
+    .map(function (chk) {
+      return estado.silenciosDetectados[parseInt(chk.dataset.indice, 10)];
+    });
+
+  if (!marcados.length) {
+    decir("No hay ningún silencio marcado para recortar.", "error");
+    return;
+  }
+
+  var origen = estado.archivoSilencios;
+  var rangosSecuencia = marcados.map(function (s) {
+    return {
+      inicioSeg: origen.clipStartSeg + (s.inicioSeg - origen.clipInPointSeg),
+      finSeg: origen.clipStartSeg + (s.finSeg - origen.clipInPointSeg),
+    };
+  });
+
+  $("#aplicarRecorteBtn").disabled = true;
+  decir("Recortando " + rangosSecuencia.length + " silencio(s) en la secuencia…");
+
+  llamarHost("sccRecortarSilencios", [origen.pista, JSON.stringify(rangosSecuencia)])
+    .then(function (d) {
+      var msg = d.cortados + " de " + d.total + " recortado(s).";
+      if (d.fallidos > 0) msg += " " + d.fallidos + " no se pudieron aplicar (revisa manualmente esos huecos).";
+      decir(msg, d.fallidos > 0 ? "error" : "ok");
+      $("#silenciosResultado").classList.add("oculto");
+      estado.silenciosDetectados = null;
+    })
+    .catch(function (e) {
+      decir(e.message, "error");
+    })
+    .finally(function () {
+      $("#aplicarRecorteBtn").disabled = false;
+    });
+};
 
 // ── Transcribir ──────────────────────────────────────────────────────────
 //

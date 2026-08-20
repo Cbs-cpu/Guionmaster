@@ -36,7 +36,7 @@ Para quitarlo: `node scripts/instalar-panel-premiere.mjs --quitar`.
 
 ## Usar
 
-Dos vistas, arriba del todo:
+Tres vistas, arriba del todo:
 
 ### Recursos
 
@@ -48,6 +48,30 @@ Dos vistas, arriba del todo:
   reproducción. Solo aparece para vídeo/imagen — un `.ass` no se inserta,
   Premiere ni siquiera lo importa como clip.
 - ↻ vuelve a leer el estado del estudio (por si acabas de generar algo).
+
+### Silencios
+
+Primer paso del flujo de edición: recortar los huecos de silencio del clip
+grabado ANTES de transcribir o generar nada — así los tiempos de todo lo
+demás ya cuentan con el vídeo final, no con el bruto.
+
+1. **Usar el clip bajo el cursor** — mismo criterio que en Transcribir.
+2. **Detectar silencios** llama a `/api/ai/silencios/detectar`, que analiza
+   el audio del ARCHIVO de origen con `ffmpeg -af silencedetect` — es
+   determinista y gratis, no consume ninguna llamada a un modelo. No toca
+   Premiere para nada: puedes detectar varias veces sin ningún efecto en el
+   proyecto.
+3. La lista de rangos aparece con checkboxes (todos marcados por defecto) y
+   el ahorro total en segundos — **revisa y desmarca lo que no quieras
+   recortar antes de aplicar nada**.
+4. **Aplicar recorte (ripple)** es el único paso que edita la secuencia de
+   verdad: llama a `sccRecortarSilencios` (`host/index.jsx`), que corta cada
+   rango marcado con dos cuchillas y lo borra con ripple (todo lo posterior
+   se pega hacia delante). Usa la API "QE" de Premiere (`app.enableQE()`),
+   la misma que usan la mayoría de paneles de recorte de silencios que
+   existen — no se ha podido probar dentro de Premiere de verdad (ver
+   abajo), así que si algo falla, el mensaje de error exacto es lo que hace
+   falta para arreglarlo.
 
 ### Transcribir
 

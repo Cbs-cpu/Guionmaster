@@ -375,6 +375,29 @@ body {
   font-size: 12px;
 }
 
+.silencios-lista {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+  margin: 4px 0 8px;
+}
+.silencio-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--borde);
+  font-size: 11px;
+}
+.silencio-fila:last-child {
+  border-bottom: none;
+}
+.silencio-fila span {
+  color: var(--texto-suave);
+  flex: 1;
+}
+
 .preview-bloque {
   display: flex;
   flex-direction: column;

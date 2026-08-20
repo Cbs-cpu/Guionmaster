@@ -39,6 +39,7 @@
 
     <nav class="vistas">
       <button class="vista-btn activa" data-vista="recursos">Recursos</button>
+      <button class="vista-btn" data-vista="silencios">Silencios</button>
       <button class="vista-btn" data-vista="transcribir">Transcribir</button>
     </nav>
 
@@ -53,6 +54,26 @@
       <main id="lista" class="lista">
         <p class="vacio">Cargando recursos…</p>
       </main>
+    </section>
+
+    <section id="vistaSilencios" class="vista oculto">
+      <div class="transcribir">
+        <p class="ayuda">
+          Detecta huecos de silencio en el audio del clip y recórtalos con ripple — revisa la lista antes de
+          aplicar nada, no se toca la secuencia hasta que pulses "Aplicar recorte".
+        </p>
+
+        <button id="usarClipSilencios" class="btn primario ancho">Usar el clip bajo el cursor</button>
+        <p id="archivoSilencios" class="archivo-elegido"></p>
+
+        <button id="detectarBtn" class="btn ancho" disabled>Detectar silencios</button>
+
+        <div id="silenciosResultado" class="oculto">
+          <p id="silenciosResumen" class="ayuda"></p>
+          <div id="silenciosLista" class="silencios-lista"></div>
+          <button id="aplicarRecorteBtn" class="btn primario ancho">Aplicar recorte (ripple)</button>
+        </div>
+      </div>
     </section>
 
     <section id="vistaTranscribir" class="vista oculto">
